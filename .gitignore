@@ -34,3 +34,7 @@ vignettes/*.pdf
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
+
+# Project files
+compare.Rmd
+spcc2_compare.Rproj
