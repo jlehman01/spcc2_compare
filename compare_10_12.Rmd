@@ -1,5 +1,5 @@
 ---
-title: "Compare SPCC Rasters: 1.1 & 1.2"
+title: "Compare SPCC Rasters: 1.0 & 1.2"
 output:
   html_document:
     df_print: paged
@@ -37,13 +37,6 @@ spcc_palette <- c("#267300", '#D7C29E', "#FFFFD4", "#F5EE1C", "#FFBEBE", "#E6000
 length(spcc_palette)
 ```
 
-
-Note: This version of SPC 1.1 uses the following layers from SPCC 1.0:
-
-* Walk Accessibility
-* Special Districts
-* Truck AADT and Percent Truck
-
 Note: This version of SPC 1.2 includes the following updated layers from SPCC 1.1:
 
 * Intersection Density (Weighted by 1-Mile Centrality, based on OSMNX)
@@ -53,7 +46,7 @@ Note: This version of SPC 1.2 includes the following updated layers from SPCC 1.
 
 ![SPCC Legend](K:\\Projects\\D4_CSHnetwork\\Graphics\\legend.PNG)
 
-## SPCC 1.1 and SPCC 1.2 Mapping
+## SPCC 1.0 and SPCC 1.2 Mapping
 
 ```{r}
 
