@@ -1,0 +1,81 @@
+---
+title: "Compare SPCC Detailed Analytic Rasters: 1.0 & 1.1"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+---
+
+
+```{r, include = FALSE, echo = FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+require(tidyverse)
+require(sf)
+library(arcgisbinding)
+library(raster)
+library(tmap)
+library(kableExtra)
+
+options(width = 2000)
+
+tmap_mode("view")
+
+arc.check_product()
+
+options(scipen=999)
+```
+
+
+```{r}
+#SPCC colors
+
+spcc_palette <- c("#267300", '#D7C29E', "#FFFFD4", "#F5EE1C", "#FFBEBE", "#E60000", "#730000", "#89CD66", "#828282", "#AA66CD", "#004C73", "#00C5FF")
+```
+
+
+Note: This version of SPC 1.1 uses the following layers from SPCC 1.0:
+
+* Walk Accessibility
+* Special Districts
+* Truck AADT and Percent Truck
+
+## Legend
+
+![](K:\\Projects\\D4_CSHnetwork\\Graphics\\legend.PNG)
+
+## SPCC 1.0 and SPCC 1.1 Mapping
+
+```{r}
+
+spcc10 <- as.raster(arc.raster(arc.open("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existing\\PBC\\Version4k.gdb\\DetAnalyticLU_FINAL")))
+
+spcc11 <- as.raster(arc.raster(arc.open('K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_10\\outputs\\existing\\Version_2_1_0.gdb\\DetAnalyticLU_FINAL_reclass')))
+
+crs(spcc10) <- crs(spcc11)
+
+diff <- overlay(spcc10, spcc11, fun=function(a,b) return(a==b))
+
+map1 <- tm_shape(spcc10) + tm_raster(style = "cat", palette = spcc_palette, title = "SPCC 1.0") + tm_basemap("Esri.WorldImagery")
+
+map2 <- tm_shape(spcc11) + tm_raster(style = "cat", palette = spcc_palette, title = "SPCC 1.1") + tm_basemap("Esri.WorldImagery")
+
+map3 <- tm_shape(diff) + tm_raster(style = "cat", palette = 'viridis', title = "Difference") + tm_basemap("Esri.WorldImagery")
+
+tmap_arrange(map1, map2, map3, ncol = 1, sync = TRUE)
+
+```
+
+## Cross tabulation of SPCC 1.0 versus SPCC 1.1
+
+```{r}
+crosstab(spcc10, spcc11) %>% kbl() %>% 
+  kable_paper(full_width = F) %>% 
+  add_header_above(c("SPCC 1.0" = 1, "SPCC 1.1" = 12)) %>%
+  column_spec(1, bold = T, border_right = T)
+```
+
+
+
