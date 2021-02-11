@@ -1,12 +1,11 @@
 ---
-title: "Compare SPCC Rasters: 1.0 & 1.2"
+title: "Compare SPCC 1.0 & 1.2"
 output:
   html_document:
     df_print: paged
 editor_options:
   chunk_output_type: console
 ---
-
 
 ```{r, include = FALSE, echo = FALSE}
 
@@ -34,15 +33,31 @@ options(scipen=999)
 
 spcc_palette <- c("#267300", '#D7C29E', "#FFFFD4", "#F5EE1C", "#FFBEBE", "#E60000", "#730000", "#89CD66", "#828282", "#AA66CD", "#004C73", "#00C5FF")
 
-length(spcc_palette)
+spcc_labels <- c("C1", "C2", "C3R", "C3C", "C4", "C5", "C6", "Protected/Rec", "Industrial", "Vacant Comm.", "Intermodal Hub", "Higher Ed")
+
 ```
 
-Note: This version of SPC 1.2 includes the following updated layers from SPCC 1.1:
+## Overview
 
-* Intersection Density (Weighted by 1-Mile Centrality, based on OSMNX)
-* Diversity
+The purpose of this page is to review and compare SPCC version 1.0 with version 1.2. Version 1.0 represents that previous version of SPCC. It provides a baseline for comparison. Version 1.2 includes updated data and measures, which are review in the Data Notes section.
 
-## Legend
+### Data Notes
+
+Version 1.2 includes:
+* Intersection Density
+    + Duplicates within 50ft of each other (such as in streets represented as dual carriageway)
+    + Dead ends removed
+    + Density measure changed to 1/4-mile network distance instead of straight-line density.
+
+* Land Use Diversity
+    + Effective Number of Parties (ENP) method applied, resulting in weighted approach to number of different land uses.
+
+* Building Placement
+    + New analytic method identifies distance from building edge to street network centroid. Factor applied to calibrate for ROW width. 
+
+* All other datasets updated with latest versions (with the exception of truck volume and AADT)
+
+### SPCC Legend
 
 ![SPCC Legend](K:\\Projects\\D4_CSHnetwork\\Graphics\\legend.PNG)
 
@@ -50,17 +65,21 @@ Note: This version of SPC 1.2 includes the following updated layers from SPCC 1.
 
 ```{r}
 
-spcc10 <- as.raster(arc.raster(arc.open('K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existing\\PBC\\Version4k.gdb\\DetAnalyticLU_FINAL')))
+spcc10_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existing\\PBC\\Version4k.gdb"
 
-spcc12 <- as.raster(arc.raster(arc.open('K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_10\\outputs\\existing\\Version_2_1_0.gdb\\DetAnalyticLU_FINAL_reclass')))
+spcc12_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_11\\outputs\\existing\\Version_2_1_1.gdb'
+
+spcc10 <- as.raster(arc.raster(arc.open(paste0(spcc10_gdb, "\\DetAnalyticLU_FINAL"))))
+
+spcc12 <- as.raster(arc.raster(arc.open(paste0(spcc12_gdb, "\\DetAnalyticLU_FINAL_reclass"))))
 
 crs(spcc10) <- crs(spcc12)
 
 diff <- overlay(spcc10, spcc12, fun=function(a,b) return(a==b))
 
-map1 <- tm_shape(spcc10) + tm_raster(style = "cat", palette = spcc_palette, title = "SPCC 1.0") + tm_basemap("Esri.WorldImagery")
+map1 <- tm_shape(spcc10) + tm_raster(style = "cat", palette = spcc_palette, labels = spcc_labels, title = "SPCC 1.0") + tm_basemap("Esri.WorldImagery")
 
-map2 <- tm_shape(spcc12) + tm_raster(style = "cat", palette = spcc_palette, title = "SPCC 1.2") + tm_basemap("Esri.WorldImagery")
+map2 <- tm_shape(spcc12) + tm_raster(style = "cat", palette = spcc_palette, labels = spcc_labels, title = "SPCC 1.2") + tm_basemap("Esri.WorldImagery")
 
 map3 <- tm_shape(diff) + tm_raster(style = "cat", palette = 'viridis', title = "Difference") + tm_basemap("Esri.WorldImagery")
 
@@ -68,12 +87,111 @@ tmap_arrange(map1, map2, map3, ncol = 1, sync = TRUE)
 
 ```
 
-## Cross tabulation of SPCC 1.0 versus SPCC 1.2
+### Cross tabulation of SPCC 1.0 versus SPCC 1.2
+
+The table below reviews the changes from 1.0 to 1.2 in tabular form. The rows indicate the number of cells of each SPCC classification in version 1.0. The columns represent the number of cells in version 1.2. This allows for a quick review of which categories are changing, and how they are changing.
 
 ```{r}
 crosstab(spcc10, spcc12) %>% kbl() %>% 
   kable_paper("hover", full_width = F) %>% 
   column_spec(1, bold = T, border_right = T)
+```
+
+## Comparison of Updated Measures
+
+The following series of maps provide a side-by-side comparison of how different input layers differ between versions. Specific input layers that feature new analysis methods have been selected for review to assist in understanding differences in the output analytic land use classifications.
+
+### Building Placement
+
+```{r}
+
+spcc10_bulding_placement <- as.raster(arc.raster(arc.open(paste0(spcc10_gdb, "\\BE_03Design_01BldgPlcmt"))))
+
+spcc12_bulding_placement <- as.raster(arc.raster(arc.open(paste0(spcc12_gdb, "\\BE_03Design_01BldgPlcmt"))))
+
+crs(spcc10_bulding_placement) <- crs(spcc12_bulding_placement)
+```
+
+
+```{r}
+spcc_building_placement_1 <- tm_shape(spcc10_bulding_placement) + 
+  tm_raster(style = "fixed", title = "SPCC 1.0 Building Placement",
+            breaks = c(0, 10, 24, 50, 999999),
+            palette = 'viridis') + tm_basemap("Esri.WorldImagery")
+
+spcc_building_placement_2 <- tm_shape(spcc12_bulding_placement) + 
+  tm_raster(style = "fixed", title = "SPCC 1.2 Building Placement",
+            breaks = c(0, 10, 24, 50, 999999),
+            palette = 'viridis') + tm_basemap("Esri.WorldImagery")
+
+
+tmap_arrange(spcc_building_placement_1, spcc_building_placement_2, sync = T, ncol = 2)
+```
+
+
+### Intersection Density
+
+```{r}
+
+spcc10_intden_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existing\\PBC\\Version4k.gdb\\BE_03Design_02IntDens'
+
+spcc12_intden_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_11\\inputs\\PBC.gdb\\intsect_den"
+
+
+spcc10_intden <- as.raster(arc.raster(arc.open(spcc10_intden_gdb)))
+
+spcc12_intden <- as.raster(arc.raster(arc.open(spcc12_intden_gdb)))
+
+crs(spcc10_intden) <- crs(spcc12_intden)
+```
+
+
+```{r}
+spcc_intden_1 <- tm_shape(spcc10_intden) + 
+  tm_raster(style = "fixed", title = "SPCC 1.0 Intersection Density",
+            breaks = c(0, 20, 100, 150, 200, 300, 99999999),
+            palette = 'viridis') + tm_basemap("Esri.WorldImagery")
+
+spcc_intden_2 <- tm_shape(spcc12_intden) + 
+  tm_raster(style = "fixed", title = "SPCC 1.2 Intersection Density",
+            breaks = c(0, 2, 10, 15, 20, 30, 99999999),
+            palette = 'viridis') + tm_basemap("Esri.WorldImagery")
+
+
+tmap_arrange(spcc_intden_1, spcc_intden_2, sync = T, ncol = 2)
+```
+
+
+### Diversity
+
+```{r}
+
+spcc10_diversity_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existing\\PBC\\Version4k.gdb\\BE_02Diversity_01LU_count'
+
+spcc12_diversity_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_11\\inputs\\PBC.gdb\\diversity_enp_v2"
+
+
+spcc10_diversity <- as.raster(arc.raster(arc.open(spcc10_diversity_gdb)))
+
+spcc12_diversity <- as.raster(arc.raster(arc.open(spcc12_diversity_gdb)))
+
+crs(spcc10_diversity) <- crs(spcc12_diversity)
+```
+
+
+```{r}
+spcc_diversity_1 <- tm_shape(spcc10_diversity) + 
+  tm_raster(style = "fixed", title = "SPCC 1.0 Diversity",
+            breaks = c(0, 1, 3, 99999999),
+            palette = 'viridis') + tm_basemap("Esri.WorldImagery")
+
+spcc_diversity_2 <- tm_shape(spcc12_diversity) + 
+  tm_raster(style = "fixed", title = "SPCC 1.2 Diversity",
+            breaks = c(0, 1, 1.7968490, 99999999),
+            palette = 'viridis') + tm_basemap("Esri.WorldImagery")
+
+
+tmap_arrange(spcc_diversity_1, spcc_diversity_2, sync = T, ncol = 2)
 ```
 
 
