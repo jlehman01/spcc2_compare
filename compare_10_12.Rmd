@@ -43,19 +43,21 @@ The purpose of this page is to review and compare SPCC version 1.0 with version 
 
 ### Data Notes
 
-Version 1.2 includes:
-* Intersection Density
+Version 1.2 includes the following changes from version 1.0:
+
+* New Intersection Density Measure
     + Duplicates within 50ft of each other (such as in streets represented as dual carriageway)
     + Dead ends removed
     + Density measure changed to 1/4-mile network distance instead of straight-line density.
 
-* Land Use Diversity
+* New Land Use Diversity Measure
     + Effective Number of Parties (ENP) method applied, resulting in weighted approach to number of different land uses.
 
-* Building Placement
+* New Building Placement Measure
     + New analytic method identifies distance from building edge to street network centroid. Factor applied to calibrate for ROW width. 
 
-* All other datasets updated with latest versions (with the exception of truck volume and AADT)
+* Updated Data
+    + All datasets have been updated with latest vintages (with the exception of truck volume and AADT, which we are still in the process of acquiring. These data play a minor roll in the classification algorithm and are not expected to contribute to significant change.)
 
 ### SPCC Legend
 
