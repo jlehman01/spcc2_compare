@@ -44,22 +44,22 @@ The purpose of this page is to review SPCC version 1.2 and compare it to version
 
 Version 1.2 includes the following changes from version 1.0.
 
--   **New Intersection Density Measure**
+#### New Intersection Density Measure
 
-    -   Prior to estimating intersection density, a two pre-processing steps added to *remove duplicate intersections removed* in the network (such as with dual carriageways) and *remove dead end nodes*, preventing them from being counted as a intersection in the density analysis.
-    -   The intersection density measure itself has also been changed to a *1/4-mile network distance* instead of straight-line buffer.\
+-   Prior to estimating intersection density, a two pre-processing steps added to *remove duplicate intersections removed* in the network (such as with dual carriageways) and *remove dead end nodes*, preventing them from being counted as a intersection in the density analysis.
+-   The intersection density measure itself has also been changed to a *1/4-mile network distance* instead of straight-line buffer.
 
--   **New Land Use Diversity Measure**
+#### New Land Use Diversity Measure
 
-    -   Instead of simply counting the number of different land uses in a given area, the Effective Number of Parties (ENP) diversity measure is applied, resulting in *weighted approach* to number of different land uses. \
+-   Instead of simply counting the number of different land uses in a given area, the Effective Number of Parties (ENP) diversity measure is applied, resulting in *weighted approach* to number of different land uses.
 
--   **New Building Placement Measure**
+#### New Building Placement Measure
 
-    -   A new analytic method *measures the distance from building edge to street network*, resulting in a more direct estimation of setback from version 1.0.\
+-   A new analytic method *measures the distance from building edge to street network*, resulting in a more direct estimation of setback from version 1.0.
 
--   **Updated Data**
+#### Updated Data
 
-    -   All datasets used in the analysis have been *updated with latest vintages*, when available, with the exception of truck volume and AADT. We are in the process of incorporating these new data, but expect them to change the classification in meaningful ways.
+-   All datasets used in the analysis have been *updated with latest vintages*, when available, with the exception of truck volume and AADT. We are in the process of incorporating these new data, but expect them to change the classification in meaningful ways.
 
 More information about each of the three new measures is provided in the Comparison of Updated Measures section.
 
