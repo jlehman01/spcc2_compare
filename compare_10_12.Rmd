@@ -38,30 +38,30 @@ spcc_labels <- c("C1", "C2", "C3R", "C3C", "C4", "C5", "C6", "Protected/Rec", "I
 
 # Overview
 
-The purpose of this page is to review version 1.2 and compare it to version 1.0. Version 1.0 represents that previous version of SPCC. It provides a baseline for comparison. Version 1.2 includes update data layers when available in addition to refined measures for evaluating intersection density, building placement, and land use diversity. Detailed notes on changes in 1.2 are available in the Data Notes section.
+The purpose of this page is to review SPCC version 1.2 and compare it to version 1.0. Version 1.0 represents that previous version of SPCC. It provides a baseline for comparison. Version 1.2 includes update data layers when available in addition to refined measures for evaluating intersection density, building placement, and land use diversity.
 
 ## Data Notes
 
-Version 1.2 includes the following changes from version 1.0:
+Version 1.2 includes the following changes from version 1.0.
 
 -   **New Intersection Density Measure**
 
     -   Prior to estimating intersection density, a two pre-processing steps added to *remove duplicate intersections removed* in the network (such as with dual carriageways) and *remove dead end nodes*, preventing them from being counted as a intersection in the density analysis.
-    -   The intersection density measure itself has also been changed to a *1/4-mile network distance* instead of straight-line buffer.
+    -   The intersection density measure itself has also been changed to a *1/4-mile network distance* instead of straight-line buffer.\
 
 -   **New Land Use Diversity Measure**
 
-    -   Instead of simply counting the number of different land uses in a given area, the Effective Number of Parties (ENP) diversity measure is applied, resulting in *weighted approach* to number of different land uses.
+    -   Instead of simply counting the number of different land uses in a given area, the Effective Number of Parties (ENP) diversity measure is applied, resulting in *weighted approach* to number of different land uses. \
 
 -   **New Building Placement Measure**
 
-    -   A new analytic method identifies the distance from building edge to street network, resulting in a more direct estimation of setback from version 1.0.
+    -   A new analytic method *measures the distance from building edge to street network*, resulting in a more direct estimation of setback from version 1.0.\
 
 -   **Updated Data**
 
-    -   All datasets used in the analysis have been updated with latest vintages, when available, with the exception of truck volume and AADT. We are in the process of incorporating these new data, but expect them to change the classification in meaningful ways.
+    -   All datasets used in the analysis have been *updated with latest vintages*, when available, with the exception of truck volume and AADT. We are in the process of incorporating these new data, but expect them to change the classification in meaningful ways.
 
-More information about each of the three new measures is provided with the respective section on mapping.
+More information about each of the three new measures is provided in the Comparison of Updated Measures section.
 
 ### SPCC Legend
 
@@ -113,7 +113,7 @@ The following series of maps provide a side-by-side comparison of how different 
 
 The following maps review the new building placement input layers. In version 1.2, a setback is estimated for each building. This measurement is computed with two datasets: building footprints and the street network. The center of the edge of a building that is nearest to any non-private street is is identified, and the distance from this point to the street centerline is calculated. This distance is then associated with the building. The \<
 
-![Example of Building Setback Calculations](images/setback_image.png){width="322"}
+![Example of Building Setback Calculations.](images/setback_image.png){width="322"}
 
 ### Mapping Building Placement Measures
 
