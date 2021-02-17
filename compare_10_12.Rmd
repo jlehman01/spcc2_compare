@@ -129,12 +129,12 @@ crs(spcc10_bulding_placement) <- crs(spcc12_bulding_placement)
 ```{r}
 spcc_building_placement_1 <- tm_shape(spcc10_bulding_placement) + 
   tm_raster(style = "fixed", title = "SPCC 1.0 Building Placement",
-            breaks = c(0, 10, 24, 50, 999999),
+            breaks = c(0, 20, 75, 999999),
             palette = 'viridis') + tm_basemap("Esri.WorldImagery")
 
 spcc_building_placement_2 <- tm_shape(spcc12_bulding_placement) + 
   tm_raster(style = "fixed", title = "SPCC 1.2 Building Placement",
-            breaks = c(0, 10, 24, 50, 999999),
+            breaks = c(0, 20, 75, 999999),
             palette = 'viridis') + tm_basemap("Esri.WorldImagery")
 
 
