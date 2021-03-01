@@ -17,6 +17,8 @@ library(arcgisbinding)
 library(raster)
 library(tmap)
 library(kableExtra)
+library(jsonlite)
+library(purrr)
 
 options(width = 2000)
 
@@ -126,7 +128,7 @@ tmap_arrange(map1, map2, map3, map4, ncol = 1, sync = TRUE)
 **Note: The Directional Change map only shows changes between detailed analytic classes C1-C6. Protected/Rec, Industrial, Vacant Comm, Intermodal Hub, and Higher Ed classes are excluded.**
 
 
-### Cross tabulation of SPCC 1.0 versus SPCC 1.3
+### Cross tabulation of SPCC 1.0 versus SPCC 1.3a
 
 The table below reviews changes from SPCC version 1.0 to 1.3a in tabular form. The rows indicate the number of cells of each SPCC classification in version 1.0. The columns represent the number of cells in version 1.3a. This allows for a quick review of which categories are changing, and how they are shifting.
 
@@ -144,7 +146,7 @@ The following series of maps provide a side-by-side comparison of how different 
 
 ### Changes in Measure
 
-The following maps review the new building placement input layers. In version 1.3a, a setback is estimated for each building. This measurement is computed with two datasets: building footprints and the street network. The center of the edge of a building that is nearest to any non-private street is is identified, and the distance from this point to the street centerline is calculated. This distance is then associated with the building. The \<
+The following maps review the new building placement input layers. In version 1.3a, a setback is estimated for each building. This measurement is computed with two datasets: building footprints and the street network. The center of the edge of a building that is nearest to any non-private street is is identified, and the distance from this point to the street centerline is calculated. This distance is then associated with the building.
 
 ![Example of Building Setback Calculations.](images/setback_image.png){width="322"}
 
@@ -249,3 +251,43 @@ spcc_diversity_2 <- tm_shape(spcc13a_diversity) +
 
 tmap_arrange(spcc_diversity_1, spcc_diversity_2, sync = T, ncol = 2)
 ```
+
+```{r}
+
+pbc_folder <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13\\configuration_files\\existing\\PBC\\"
+global_folder <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13\\configuration_files\\existing\\D4\\"
+
+pbc_files <- list.files(pbc_folder, pattern = ".json", full.names = TRUE)
+
+read_jsons <- function(x) {
+  x %>% 
+    fromJSON(simplifyVector = TRUE)
+ 
+}
+
+test <- lapply(pbc_files, read_jsons)
+
+
+pbc_folder %>% 
+  map_df(~fromJSON, simplifyVector = TRUE)
+
+fromJSON("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\configuration_files\\existing\\PBC\\BE_03Design_01BldgPlcmt.json", simplifyMatrix = TRUE) %>% 
+  kbl()
+
+
+pbc_files %>% 
+  map_dfr(read_json)
+
+
+df$json %>%
+    map_dfr(~unlist(jsonlite::fromJSON(.)))
+
+
+
+data <- pbc_files %>%
+       map_df(~fromJSON(file.path(pbc_folder, .)))
+
+
+```
+
+
