@@ -1,0 +1,76 @@
+---
+title: "Compare SPCC 1.0 & 1.3c Refined Smoothed Segments [DRAFT]"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+---
+
+```{r, include = FALSE, echo = FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+require(tidyverse)
+require(sf)
+library(tmap)
+library(kableExtra)
+
+options(width = 2000)
+
+tmap_mode("view")
+
+options(scipen=999)
+```
+
+```{r}
+#SPCC colors
+
+spcc_palette <- c("#267300", '#D7C29E', "#FFFFD4", "#F5EE1C", "#FFBEBE", "#E60000", "#730000", "#0084A8")
+
+spcc_labels <- c("C1", "C2", "C3R", "C3C", "C4", "C5", "C6", "Special Districts")
+
+```
+
+# Overview
+
+The purpose of this page is to review SPCC refined smoothed analytic segments and compare them to version 1.0. This comparison report is still in development, and further maps and reports will be added as they are developed.
+
+This website compares version 1.3c to version 1.0. Version 1.0 represents the existing version of SPCC and provides a baseline for comparison. Version 1.3c includes updated data layers where new data is available in addition to refined measures for evaluating intersection density, building placement, and land use diversity.
+
+# SPCC 1.0 and SPCC 1.3c Mapping: Refined Smoothed Segments
+
+```{r}
+
+segments <- st_read("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs\\segment_smoothing\\pbc_13b_10_overlay_smoothed_segments_refined_analytic_v2.shp", quiet = TRUE) %>% 
+  rename(value_base = VALUE,
+         value_13c = VALUE2) %>% 
+  mutate(difference_flag = if_else(
+    value_base == value_13c, "No", "Yes"
+  ))
+
+class_change <- segments %>% 
+  filter(value_base < 900 & value_13c < 900) %>% 
+  mutate(directional_change = case_when(
+    value_base < value_13c ~ "class increase",
+    value_base > value_13c ~ "class decrease",
+    value_base == value_13c ~ "no change"
+  ))
+
+
+map1 <- tm_shape(segments) + tm_lines(col = "value_base", style = "cat", palette = spcc_palette, lwd = 2.5, title.col = "SPCC 1.0 Refined Smoothed", labels = spcc_labels) + tm_basemap("Esri.WorldImagery")
+
+map2 <- tm_shape(segments) + tm_lines(col = "value_13c", style = "cat", palette = spcc_palette, lwd = 2.5, title.col = "SPCC 1.3c Refined Smoothed", labels = spcc_labels) + tm_basemap("Esri.WorldImagery")
+
+map3 <- tm_shape(class_change) + tm_lines(col = "directional_change", style = "cat", palette = 'viridis', lwd = 2.5, title.col = "SPCC 1.0 vs. 1.3c - Directional Change", popup.vars = c("value_base", "value_13c")) + tm_basemap("CartoDB.Positron")
+
+tmap_arrange(map1, map2, map3, ncol = 1, sync = TRUE)
+
+```
+
+**Note: The Directional Change map only shows changes between detailed analytic classes C1-C6.**
+
+
+### Cross tabulation of SPCC 1.0 versus SPCC 1.3c
+
+This section is in development and will provide a tabular comparison of SPCC refined smoothed analytic versions 1.0 to 1.3c.
