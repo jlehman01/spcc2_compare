@@ -47,7 +47,8 @@ segments <- st_read("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2
          value_13c = VALUE2) %>% 
   mutate(difference_flag = if_else(
     value_base == value_13c, "No", "Yes"
-  ))
+  ),
+  value_13c = if_else(value_13c == 801, 900, value_13c))
 
 class_change <- segments %>% 
   filter(value_base < 900 & value_13c < 900) %>% 
@@ -58,9 +59,9 @@ class_change <- segments %>%
   ))
 
 
-map1 <- tm_shape(segments) + tm_lines(col = "value_base", style = "cat", palette = spcc_palette, lwd = 2.5, title.col = "SPCC 1.0 Refined Smoothed", labels = spcc_labels) + tm_basemap("Esri.WorldImagery")
+map1 <- tm_shape(arrange(segments, value_base)) + tm_lines(col = "value_base", style = "cat", lwd = 2.5, title.col = "SPCC 1.0 Refined Smoothed", palette = spcc_palette, labels = spcc_labels) + tm_basemap("Esri.WorldImagery")
 
-map2 <- tm_shape(segments) + tm_lines(col = "value_13c", style = "cat", palette = spcc_palette, lwd = 2.5, title.col = "SPCC 1.3c Refined Smoothed", labels = spcc_labels) + tm_basemap("Esri.WorldImagery")
+map2 <-tm_shape(arrange(segments, value_13c)) + tm_lines(col = "value_13c", style = "cat", lwd = 2.5, title.col = "SPCC 1.3c Refined Smoothed", palette = spcc_palette, labels = spcc_labels) + tm_basemap("Esri.WorldImagery")
 
 map3 <- tm_shape(class_change) + tm_lines(col = "directional_change", style = "cat", palette = 'viridis', lwd = 2.5, title.col = "SPCC 1.0 vs. 1.3c - Directional Change", popup.vars = c("value_base", "value_13c")) + tm_basemap("CartoDB.Positron")
 
