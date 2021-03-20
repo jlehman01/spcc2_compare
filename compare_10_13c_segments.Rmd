@@ -125,7 +125,7 @@ colnames(crosstab)[1] <- "Refined Smoothed"
 
 crs <- st_crs(segments)
 
-plcc_spcc <- st_read("K:/Projects/D4_CSHnetwork/Features/Transp/FDOT/D4_SPCC_PLCC_Tracking/PLCC_SPCC_080520_Revised_Route_Events.shp") %>% 
+plcc_spcc <- st_read("K:/Projects/D4_CSHnetwork/Features/Transp/FDOT/D4_SPCC_PLCC_Tracking/PLCC_SPCC_080520_Revised_Route_Events.shp", quiet = T) %>% 
   st_zm() %>% 
   st_make_valid() %>% 
   filter(!is.na(SPCC) & CC_Flag == 1) %>% 
@@ -135,6 +135,6 @@ plcc_spcc_intersection <- st_intersection(st_zm(segments), plcc_spcc) %>%
   st_make_valid() %>% 
   select(class_base, class_13c, SPCC, PLCC)
 
-tm_shape(plcc_spcc_intersection) + tm_lines(lwd = 2.5)
+tm_shape(plcc_spcc_intersection) + tm_lines(lwd = 2.5, col = "PLCC", palette = "viridis")
 ```
 
