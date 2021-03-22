@@ -52,7 +52,7 @@ segments <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/spcc_v2_13b/o
            value_base %in% c(1, 700) ~ "C1 - Natural",
            value_base == 2 ~ "C2 - Rural",
            value_base == 307 ~ "C3R - Suburan Residential",
-           value_base %in% c(330, 800, 801) ~ "C3C - Suburan Residential",
+           value_base %in% c(330, 800, 801) ~ "C3C - Suburan Commercial",
            value_base == 400 ~ "C4 - Urban General",
            value_base == 500 ~ "C5 - Urban Center",
            value_base == 600 ~ "C6 - Urban Core",
@@ -61,7 +61,7 @@ segments <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/spcc_v2_13b/o
            value_13c %in% c(1, 700) ~ "C1 - Natural",
            value_13c == 2 ~ "C2 - Rural",
            value_13c == 307 ~ "C3R - Suburan Residential",
-           value_13c %in% c(330, 800, 801) ~ "C3C - Suburan Residential",
+           value_13c %in% c(330, 800, 801) ~ "C3C - Suburan Commercial",
            value_13c == 400 ~ "C4 - Urban General",
            value_13c == 500 ~ "C5 - Urban Center",
            value_13c == 600 ~ "C6 - Urban Core",
@@ -79,13 +79,13 @@ class_change <- segments %>%
            value_base_for_change == value_14c_for_change ~ "no change"))
 
 
-spcc_palette1 <- c("#267300", '#D7C29E', "#FFFFD4", "#F5EE1C", "#E60000", "#730000", "#0084A8")
+spcc_palette1 <- c("#267300", '#D7C29E', "#FFFFD4", "#F5EE1C", "#E60000", "#730000")
 
-map1 <- tm_shape(segments) + tm_lines(col = "class_base", lwd = 2.5, palette = spcc_palette1, title.col = "SPCC 1.0 Refined Smoothed") + tm_basemap("Esri.WorldImagery")
+map1 <- tm_shape(segments) + tm_lines(col = "class_base", lwd = 2.5, palette = spcc_palette1, title.col = "SPCC 1.0 Refined Smoothed", showNA = F) + tm_basemap("Esri.WorldImagery")
 
 spcc_palette2 <- c("#267300", '#D7C29E', "#FFFFD4", "#F5EE1C", "#E60000", "#730000", "#0084A8")
 
-map2 <- tm_shape(segments) + tm_lines(col = "class_13c", lwd = 2.5, palette = spcc_palette2, title.col = "SPCC 1.3c Refined Smoothed") + tm_basemap("Esri.WorldImagery")
+map2 <- tm_shape(segments) + tm_lines(col = "class_13c", lwd = 2.5, palette = spcc_palette2, title.col = "SPCC 1.3c Refined Smoothed", showNA = F) + tm_basemap("Esri.WorldImagery")
 
 map3 <- tm_shape(class_change) + tm_lines(col = "directional_change", style = "cat", palette = 'viridis', lwd = 2.5, title.col = "SPCC 1.0 vs. 1.3c - Directional Change", popup.vars = c("value_base", "value_13c")) + tm_basemap("CartoDB.Positron")
 
