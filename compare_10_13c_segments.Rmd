@@ -79,11 +79,11 @@ class_change <- segments %>%
            value_base_for_change == value_14c_for_change ~ "no change"))
 
 
-spcc_palette1 <- c("#267300", '#D7C29E', "#FFFFD4", "#F5EE1C", "#E60000", "#730000")
+spcc_palette1 <- c("#267300", '#D7C29E', "#FFFFD4", "#F5EE1C", "#FFCCCC", "#E60000", "#730000")
 
 map1 <- tm_shape(segments) + tm_lines(col = "class_base", lwd = 2.5, palette = spcc_palette1, title.col = "SPCC 1.0 Refined Smoothed", showNA = F) + tm_basemap("Esri.WorldImagery")
 
-spcc_palette2 <- c("#267300", '#D7C29E', "#FFFFD4", "#F5EE1C", "#E60000", "#730000", "#0084A8")
+spcc_palette2 <- c("#267300", '#D7C29E', "#FFFFD4", "#F5EE1C", "#FFCCCC", "#E60000", "#730000", "#0084A8")
 
 map2 <- tm_shape(segments) + tm_lines(col = "class_13c", lwd = 2.5, palette = spcc_palette2, title.col = "SPCC 1.3c Refined Smoothed", showNA = F) + tm_basemap("Esri.WorldImagery")
 
