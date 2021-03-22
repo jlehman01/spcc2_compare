@@ -146,11 +146,10 @@ plcc_spcc_intersection %>%
   mutate(class_13c = str_remove_all(class_13c, " "),
          SPCC = str_remove_all(SPCC, " "),
          PLCC = str_remove_all(PLCC, " "),
-         class_13c_plcc_alignment = if_else(class_13c == PLCC, "yes", "no"),
          linear_feet = as.numeric(st_length(.))) %>%
   filter(linear_feet > 0) %>% 
   st_drop_geometry() %>% 
-  kbl(col.names = c("SPCC 1.3c", "SPCC 1.0", "PLCC", "SPCC 1.3c - PLCC Alignment", "Linear Feet")) %>% 
+  kbl(col.names = c("SPCC 1.3c", "SPCC 1.0", "PLCC", "Linear Feet")) %>% 
   kable_paper("hover", full_width = F)
 
 ```
