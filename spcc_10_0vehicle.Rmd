@@ -37,8 +37,8 @@ epsg <- 2236
 ## Analysis Overview
 
 This analysis quantifies relationships between SPCC 1.0 Refined Smoothed
-Roadway Segments and households with no access to vesicles as identified
-in the 2018 American Community Survey.
+Roadway Segments and households with no access to vehicles as identified
+in the 2018 Census American Community Survey (ACS).
 
 ```{r}
 
