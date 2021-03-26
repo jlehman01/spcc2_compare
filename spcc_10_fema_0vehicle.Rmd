@@ -1,0 +1,141 @@
+---
+title: "Relationship Between SPCC 1.0 & FEMA National Flood Hazard Layer"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+  markdown: 
+    wrap: 72
+---
+
+```{r, include = FALSE, echo = FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(sf)
+library(tmap)
+library(kableExtra)
+library(readr)
+library(ggplot2)
+library(plotly)
+library(rpgcolorsr)
+library(stringr)
+library(rmapshaper)
+library(classInt)
+
+options(width = 2000)
+
+tmap_mode("view")
+
+options(scipen=999)
+
+epsg <- 2236
+```
+
+## Analysis Overview
+
+This analysis quantifies relationships between SPCC 1.0 Refined Smoothed
+Roadway Segments and households with no access to vesicles as identified
+in the 2018 American Community Survey.
+
+```{r}
+
+study_area <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/data_prep/cleaned_data/study_area/study_area.shp", quiet = T) %>% 
+  st_transform(epsg)
+
+spcc10 <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC/SPCC_V1_0_Final_w_metadata/Outputs/Districtwide_Refined_ver_1_0.gdb", layer = "Existing_RefinedSmoothedSegs_ver_1_0", quiet = T) %>% 
+  st_transform(epsg) %>% 
+  st_zm()
+
+zero_veh_hh <- st_read('K:/Projects/FLdemographic/cenacs_2018/cenacs_2018.shp', quiet = T) %>%   st_transform(epsg) %>% 
+  mutate(acres = as.numeric(st_area(.))/43560,
+         veh_0_per_acre = VEHICLE_0 / acres) %>% 
+  select(veh_0_per_acre)
+
+breaks_density <- classIntervals(zero_veh_hh$veh_0_per_acre, n=4, style='quantile')
+
+zero_veh_hh$density_cat <- cut(zero_veh_hh$veh_0_per_acre, breaks = breaks_density$brks)
+
+spcc10_0veh_density_intersect <- st_intersection(spcc10, zero_veh_hh)
+
+
+```
+
+## Mapping 
+
+### SPCC 1.0 Segments by Density of Zero Vehicle Households
+
+The following map presents all roadway segments in the SPCC 1.0 Refined
+Smoothed dataset, symbolized based on the density of zero vehicle
+households in the Census block group the roadway traverses. Zero vehicle
+household density is divided into four quantiles across the entire D4
+study area.
+
+```{r}
+
+MyPal <- rpg_color_pal("logo")(4)
+
+
+tm_shape(spcc10_0veh_density_intersect) + tm_lines(col = "density_cat", 
+                                          palette = MyPal, lwd = 2, 
+                                          title.col = "SPCC Segments by 0 Vehicle HH Density")
+
+```
+
+## Tables and Charts
+
+### Zero Vehicle Households Quantiles by SPCC 1.0 Refined Smoothed Classification
+
+The following table and charts present the absolute and relative
+presence of each of the five zero vehicle household quantile
+classifications for each SPCC 1.0 Refined Smoothed classification.
+
+```{r}
+
+spcc_intersect <- spcc10_0veh_density_intersect %>%
+  select(GCODE_DESC, density_cat) %>% 
+  mutate(linear_feet = as.numeric(st_length(.)),
+         density_cat = replace_na(as.character(density_cat), "No 0-Vehicle Data")) %>%
+  filter(linear_feet > 0) %>% 
+  st_drop_geometry() %>%
+  group_by(GCODE_DESC, density_cat) %>%
+  summarise(linear_feet = sum(linear_feet)) 
+
+spcc_intersect %>% 
+  pivot_wider(names_from = density_cat, values_from = linear_feet) %>% 
+  kbl(col.names = c("SPCC 1.0", "Quant. 1 (low density)", "Quant. 2 (med. low)", 
+                    "Quant. 3 (med. high)", "Quant. 4 (high)", "No 0-Vehicle Data"),
+     format.args = list(digits = 0, big.mark = ",")) %>% 
+  kable_paper("hover", full_width = F) %>% 
+  add_header_above(c("SPCC 1.0", "0-Vehicle Household Density Quantile" = 5))
+
+```
+
+```{r}
+
+# Small multiple
+ggplotly(ggplot(spcc_intersect, aes(fill=density_cat, y=linear_feet, x=GCODE_DESC)) + 
+    geom_bar(position="fill", stat="identity") +
+    scale_fill_rpg(palette = "rpg_colors") +
+    ggtitle("SPCC by 0 Vehicle Household Density Quantile (Proportional)") +
+    xlab("") +
+    ylab("% of Roadway") +
+    scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+    labs(fill = "Quantile (0-veh. HH / Ac)"))
+
+```
+
+```{r}
+# Small multiple
+ggplotly(ggplot(spcc_intersect, aes(fill=density_cat, y=linear_feet, x=GCODE_DESC)) + 
+    geom_bar(position="stack", stat="identity") +
+    scale_fill_rpg(palette = "rpg_colors") +
+    ggtitle("SPCC by 0 Vehicle Household Density Quantile (Absolute)") +
+    xlab("") +
+    ylab("Linear Feet of 0-Vehicle HH Quantile Classification") +
+    scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+    labs(fill = "Quantile (0-veh. HH / Ac)"))
+
+```
