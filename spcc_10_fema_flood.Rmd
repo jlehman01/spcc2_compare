@@ -1,0 +1,136 @@
+---
+title: "Relationship Between SPCC 1.0 & FEMA National Flood Hazard Layer"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+  markdown: 
+    wrap: 72
+---
+
+```{r, include = FALSE, echo = FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(sf)
+library(tmap)
+library(kableExtra)
+library(readr)
+library(ggplot2)
+library(plotly)
+library(rpgcolorsr)
+library(stringr)
+library(rmapshaper)
+
+options(width = 2000)
+
+tmap_mode("view")
+
+options(scipen=999)
+
+epsg <- 2236
+```
+
+## Analysis Overview
+
+This analysis quantifies relationships between SPCC 1.0 Refined Smoothed
+Roadway Segments and flood hazard areas identified in FEMA's Flood
+Insurance Rate Map (FIRM). For this analysis, FIRM GIS data for the
+state of Florida were obtained from the [FGDL data
+repository](https://www.fgdl.org/metadataexplorer/explorer.jsp) in March
+2021. This analysis identified the floodplain of each roadway segment
+using the roadway centerline's relationship to FIRM polygons.
+
+```{r}
+
+study_area <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/data_prep/cleaned_data/study_area/study_area.shp", quiet = T) %>% 
+  st_transform(epsg)
+
+flood_hazard <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/equity_resiliency/dfirm_fldhaz_oct20_clip.shp", quiet = T) %>% 
+  st_transform(epsg)
+
+spcc10 <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC/SPCC_V1_0_Final_w_metadata/Outputs/Districtwide_Refined_ver_1_0.gdb", layer = "Existing_RefinedSmoothedSegs_ver_1_0", quiet = T) %>% 
+  st_transform(epsg) %>% 
+  st_zm()
+
+spcc_flood_intersect <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/equity_resiliency/spcc_10_flood_intersect.shp", quiet = T) %>% 
+  st_transform(epsg) %>% 
+  st_zm() %>% 
+  select(GCODE_DESC, FLOODPLAIN, ROADID)
+
+```
+
+## Mapping 
+
+### SPCC 1.0 Segments by Floodplain Designation
+
+The following map presents all roadway segments in the SPCC 1.0 Refined
+Smoothed dataset, symbolized based on the FEMA floodplain classification
+zone that it resides within. In cases where a roadway segment crossed
+more than one zone, the roadway segment was split.
+
+```{r}
+
+MyPal <- rpg_color_pal("rpg_rainbow_no_grey")(5)
+
+spcc_flood_intersect_simp <- ms_simplify(spcc_flood_intersect)
+
+tm_shape(spcc_flood_intersect_simp) + tm_lines(col = "FLOODPLAIN", 
+                                          palette = MyPal, lwd = 2, title.col = "SPCC Segments by Floodplain")
+
+```
+
+## Tables and Charts
+
+### Floodplain Designations by SPCC 1.0 Refined Smoothed Classification
+
+The following table and charts present the presence of the five FEMA
+floodplain classifications for each SPCC 1.0 Refined Smoothed
+classification.
+
+```{r}
+
+spcc_intersect <- spcc_flood_intersect %>%
+  select(GCODE_DESC, FLOODPLAIN) %>% 
+  mutate(linear_feet = as.numeric(st_length(.))) %>%
+  filter(linear_feet > 0) %>% 
+  st_drop_geometry() %>% 
+  group_by(GCODE_DESC, FLOODPLAIN) %>%
+  summarise(linear_feet = sum(linear_feet)) 
+
+spcc_intersect %>% 
+  pivot_wider(names_from = FLOODPLAIN, values_from = linear_feet) %>% 
+  kbl(col.names = c("SPCC 1.0", "100-Year Floodplain", "500-Year Floodplain", 
+                    "Open Water", "Outside Floodplain", "Undetermined"),
+     format.args = list(digits = 0, big.mark = ",")) %>% 
+  kable_paper("hover", full_width = F) %>% 
+  add_header_above(c("SPCC 1.0", "FEMA Floodplain Designation" = 5))
+
+```
+
+```{r}
+
+# Small multiple
+ggplotly(ggplot(spcc_intersect, aes(fill=FLOODPLAIN, y=linear_feet, x=GCODE_DESC)) + 
+    geom_bar(position="fill", stat="identity") +
+    scale_fill_rpg(palette = "rpg_colors") +
+    ggtitle("SPCC by FEMA Flood Classification - Percent") +
+    xlab("") +
+    ylab("% of Roadway") +
+    scale_x_discrete(labels = function(x) str_wrap(x, width = 10)))
+
+```
+
+```{r}
+# Small multiple
+ggplotly(ggplot(spcc_intersect, aes(fill=FLOODPLAIN, y=linear_feet, x=GCODE_DESC)) + 
+    geom_bar(position="stack", stat="identity") +
+    scale_fill_rpg(palette = "rpg_colors") +
+    ggtitle("SPCC by FEMA Flood Classification - Linear Feet") +
+    xlab("") +
+    ylab("Linear Feet of Roadway") +
+    scale_x_discrete(labels = function(x) str_wrap(x, width = 10)))
+
+```
