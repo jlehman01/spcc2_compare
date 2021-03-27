@@ -22,6 +22,8 @@ library(ggplot2)
 library(plotly)
 library(rpgcolorsr)
 library(stringr)
+library(scales)
+library(rmapshaper)
 
 options(width = 2000)
 
@@ -47,10 +49,10 @@ using the roadway centerline's relationship to FIRM polygons.
 study_area <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/data_prep/cleaned_data/study_area/study_area.shp", quiet = T) %>% 
   st_transform(epsg)
 
-flood_hazard <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/equity_resiliency/dfirm_fldhaz_oct20_clip.shp", quiet = T) %>% 
-  st_transform(epsg)
+#flood_hazard <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/equity_resiliency/dfirm_fldhaz_oct20_clip.shp", quiet = T) %>% 
+#  st_transform(epsg)
 
-spcc10 <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC/SPCC_V1_0_Final_w_metadata/Outputs/Districtwide_Refined_ver_1_0.gdb", layer = "Existing_RefinedSmoothedSegs_ver_1_0") %>% 
+spcc10 <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC/SPCC_V1_0_Final_w_metadata/Outputs/Districtwide_Refined_ver_1_0.gdb", layer = "Existing_RefinedSmoothedSegs_ver_1_0", quiet = T) %>% 
   st_transform(epsg) %>% 
   st_zm()
 
@@ -61,7 +63,7 @@ spcc_flood_intersect <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/e
 
 ```
 
-## Mapping 
+## Mapping
 
 ### SPCC 1.0 Segments by Floodplain Designation
 
@@ -105,6 +107,29 @@ spcc_intersect %>%
 
 ```
 
+The following table presents the same data as above, but instead of
+absolute linear feet of roadway per quantile, the table provides the
+percent breakdown of all floodplain classifications across each SPCC
+category.
+
+```{r}
+
+spcc_intersect_percent <- spcc_intersect %>%
+  group_by(GCODE_DESC) %>% 
+  mutate(linear_feet_cat_tot = sum(linear_feet)) %>% 
+  ungroup() %>% 
+  mutate(linear_feet_cat_pct = scales::percent(linear_feet / linear_feet_cat_tot, accuracy = 0.1)) %>% 
+  select(linear_feet_cat_pct, FLOODPLAIN, GCODE_DESC)
+
+spcc_intersect_percent %>% 
+  pivot_wider(names_from = FLOODPLAIN, values_from = linear_feet_cat_pct) %>% 
+  kbl(col.names = c("SPCC 1.0", "100-Year Floodplain", "500-Year Floodplain", 
+                    "Open Water", "Outside Floodplain", "Undetermined"),
+      format.args = list(digits = 0, big.mark = ",")) %>% 
+  kable_paper("hover", full_width = F) %>% 
+  add_header_above(c("SPCC 1.0", "0-Vehicle Household Density Quantile - Percent" = 5))
+```
+
 ```{r}
 
 # Small multiple
@@ -114,7 +139,9 @@ ggplotly(ggplot(spcc_intersect, aes(fill=FLOODPLAIN, y=linear_feet, x=GCODE_DESC
     ggtitle("SPCC by FEMA Flood Classification - Percent") +
     xlab("") +
     ylab("% of Roadway") +
-    scale_x_discrete(labels = function(x) str_wrap(x, width = 10)))
+    scale_x_discrete(labels = function(x) str_wrap(x, width = 10))) %>%
+    layout(legend = list(orientation = "h", x = 0.4, y = -0.2))
+
 
 
 ```
@@ -127,7 +154,9 @@ ggplotly(ggplot(spcc_intersect, aes(fill=FLOODPLAIN, y=linear_feet, x=GCODE_DESC
     ggtitle("SPCC by FEMA Flood Classification - Linear Feet") +
     xlab("") +
     ylab("Linear Feet of Roadway") +
-    scale_x_discrete(labels = function(x) str_wrap(x, width = 10)))
+    scale_x_discrete(labels = function(x) str_wrap(x, width = 10))) %>%
+    layout(legend = list(orientation = "h", x = 0.4, y = -0.2))
+
 
 
 
