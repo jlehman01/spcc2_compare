@@ -150,7 +150,7 @@ spcc_intersect_percent %>%
 
 ```{r}
 
-# Small multiple
+
 ggplotly(ggplot(spcc_intersect, aes(fill=density_cat, y=linear_feet, x=GCODE_DESC)) + 
     geom_bar(position="fill", stat="identity") +
     scale_fill_rpg(palette = "rpg_colors") +
@@ -158,12 +158,13 @@ ggplotly(ggplot(spcc_intersect, aes(fill=density_cat, y=linear_feet, x=GCODE_DES
     xlab("") +
     ylab("% of Roadway") +
     scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
-    labs(fill = "Quantile (0-veh. HH / Ac)"))
+    labs(fill = "Quantile (0-veh. HH / Ac)")) %>%
+    layout(legend = list(orientation = "h", x = 0.4, y = -0.2))
 
 ```
 
 ```{r}
-# Small multiple
+
 ggplotly(ggplot(spcc_intersect, aes(fill=density_cat, y=linear_feet, x=GCODE_DESC)) + 
     geom_bar(position="stack", stat="identity") +
     scale_fill_rpg(palette = "rpg_colors") +
@@ -171,6 +172,7 @@ ggplotly(ggplot(spcc_intersect, aes(fill=density_cat, y=linear_feet, x=GCODE_DES
     xlab("") +
     ylab("Linear Feet of 0-Vehicle HH Quantile Classification") +
     scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
-    labs(fill = "Quantile (0-veh. HH / Ac)"))
+    labs(fill = "Quantile (0-veh. HH / Ac)")) %>%
+    layout(legend = list(orientation = "h", x = 0.4, y = -0.2))
 
 ```
