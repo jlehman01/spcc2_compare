@@ -54,11 +54,11 @@ zero_veh_hh <- st_read('K:/Projects/FLdemographic/cenacs_2018/cenacs_2018.shp', 
          veh_0_per_acre = VEHICLE_0 / acres) %>% 
   select(veh_0_per_acre)
 
-breaks_density <- classIntervals(zero_veh_hh$veh_0_per_acre, n=4, style='quantile')
-
-zero_veh_hh$density_cat <- cut(zero_veh_hh$veh_0_per_acre, breaks = breaks_density$brks)
-
 spcc10_0veh_density_intersect <- st_intersection(spcc10, zero_veh_hh)
+
+breaks_density <- classIntervals(spcc10_0veh_density_intersect$veh_0_per_acre, n=4, style='quantile')
+
+spcc10_0veh_density_intersect$density_cat <- cut(spcc10_0veh_density_intersect$veh_0_per_acre, breaks = breaks_density$brks)
 
 
 ```
@@ -68,10 +68,11 @@ spcc10_0veh_density_intersect <- st_intersection(spcc10, zero_veh_hh)
 ### SPCC 1.0 Segments by Density of Zero Vehicle Households
 
 The following map presents all roadway segments in the SPCC 1.0 Refined
-Smoothed dataset, symbolized based on the density of zero vehicle
-households in the Census block group the roadway traverses. Zero vehicle
-household density is divided into four quantiles across the entire D4
-study area.
+Smoothed dataset, symbolized based on the quantile ranking of zero vehicle
+households per acre per Census block group that the roadway traverses. Zero vehicle
+household density was calculated by generating four quantiles across the entire D4
+study area in addition to one classification for block groups where there is no data.
+
 
 ```{r}
 
@@ -90,7 +91,7 @@ tm_shape(spcc10_0veh_density_intersect) + tm_lines(col = "density_cat",
 
 The following table and charts present the absolute and relative
 presence of each of the five zero vehicle household quantile
-classifications for each SPCC 1.0 Refined Smoothed classification.
+classifications for each SPCC 1.0 Refined Smoothed classification. Numbers are presented as either linear feet (absolute) or portion of total linear feet.
 
 ```{r}
 
