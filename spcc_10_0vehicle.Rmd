@@ -24,6 +24,7 @@ library(rpgcolorsr)
 library(stringr)
 library(rmapshaper)
 library(classInt)
+library(scales)
 
 options(width = 2000)
 
@@ -79,9 +80,11 @@ study area in addition to one classification for block groups where there is no 
 MyPal <- rpg_color_pal("logo")(4)
 
 
-tm_shape(spcc10_0veh_density_intersect) + tm_lines(col = "density_cat", 
+tm_shape(spcc10_0veh_density_intersect) + tm_lines(col = "veh_0_per_acre", 
+                                          style = "fixed", breaks = breaks_density$brks,
                                           palette = MyPal, lwd = 2, 
-                                          title.col = "SPCC Segments by 0 Vehicle HH Density")
+                                          popup.vars = c('veh_0_per_acre', 'density_cat', 'GCODE_DESC'), 
+                                          title.col = "0-Vehicle HH / Acre (4 quantiles)")
 
 ```
 
@@ -104,15 +107,46 @@ spcc_intersect <- spcc10_0veh_density_intersect %>%
   group_by(GCODE_DESC, density_cat) %>%
   summarise(linear_feet = sum(linear_feet)) 
 
+
+#build table of linear feet value
+
 spcc_intersect %>% 
   pivot_wider(names_from = density_cat, values_from = linear_feet) %>% 
   kbl(col.names = c("SPCC 1.0", "Quant. 1 (low density)", "Quant. 2 (med. low)", 
                     "Quant. 3 (med. high)", "Quant. 4 (high)", "No 0-Vehicle Data"),
      format.args = list(digits = 0, big.mark = ",")) %>% 
   kable_paper("hover", full_width = F) %>% 
-  add_header_above(c("SPCC 1.0", "0-Vehicle Household Density Quantile" = 5))
+  add_header_above(c("SPCC 1.0", "0-Vehicle Household Density Quantile - Absolute" = 5))
+
+#build table of percent of linear feet for each category
+
+
 
 ```
+
+The following table presents the same data as above, but instead of absolute linear feet of roadway per quantile, the table provides the percent breakdown of all quantiles across each SPCC classification.
+
+```{r}
+
+spcc_intersect_percent <- spcc_intersect %>%
+  group_by(GCODE_DESC) %>% 
+  mutate(linear_feet_cat_tot = sum(linear_feet)) %>% 
+  ungroup() %>% 
+  mutate(linear_feet_cat_pct = scales::percent(linear_feet / linear_feet_cat_tot, accuracy = 0.1)) %>% 
+  select(linear_feet_cat_pct, density_cat, GCODE_DESC)
+
+spcc_intersect_percent %>% 
+  pivot_wider(names_from = density_cat, values_from = linear_feet_cat_pct) %>% 
+  kbl(col.names = c("SPCC 1.0", "Quant. 1 (low density)", "Quant. 2 (med. low)", 
+                    "Quant. 3 (med. high)", "Quant. 4 (high)", "No 0-Vehicle Data"),
+     format.args = list(digits = 0, big.mark = ",")) %>% 
+  kable_paper("hover", full_width = F) %>% 
+  add_header_above(c("SPCC 1.0", "0-Vehicle Household Density Quantile - Percent" = 5))
+```
+
+
+
+
 
 ```{r}
 
