@@ -61,7 +61,10 @@ breaks_density <- classIntervals(spcc10_0veh_density_intersect$veh_0_per_acre, n
 
 spcc10_0veh_density_intersect$density_cat <- cut(spcc10_0veh_density_intersect$veh_0_per_acre, breaks = breaks_density$brks)
 
-
+spcc10_0veh_density_intersect <- spcc10_0veh_density_intersect %>% 
+  mutate(density_cat = str_remove(density_cat, '\\('),
+         density_cat = str_remove(density_cat, '\\]'),
+         density_cat = str_replace(density_cat, ',', ' - '))
 ```
 
 ## Mapping 
