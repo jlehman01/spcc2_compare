@@ -132,8 +132,8 @@ spcc_intersect_percent %>%
 
 ```{r}
 
-# Small multiple
-ggplotly(ggplot(spcc_intersect, aes(fill=FLOODPLAIN, y=linear_feet, x=GCODE_DESC)) + 
+ggplotly(ggplot(spcc_intersect, aes(fill=FLOODPLAIN, 
+                                    y=linear_feet, x=GCODE_DESC)) + 
     geom_bar(position="fill", stat="identity") +
     scale_fill_rpg(palette = "rpg_colors") +
     ggtitle("SPCC by FEMA Flood Classification - Percent") +
