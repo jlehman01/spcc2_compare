@@ -51,6 +51,9 @@ study_area <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/data_prep/c
 flood_hazard <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/equity_resiliency/dfirm_fldhaz_oct20_clip.shp", quiet = T) %>% 
   st_transform(epsg)
 
+flood_hazard_simp <- flood_hazard %>% 
+  ms_simplify()
+
 spcc10 <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC/SPCC_V1_0_Final_w_metadata/Outputs/Districtwide_Refined_ver_1_0.gdb", layer = "Existing_RefinedSmoothedSegs_ver_1_0", quiet = T) %>% 
   st_transform(epsg) %>% 
   st_zm()
@@ -62,7 +65,7 @@ spcc_flood_intersect <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/e
 
 ```
 
-## Mapping 
+## Mapping
 
 ### SPCC 1.0 Segments by Floodplain Designation
 
