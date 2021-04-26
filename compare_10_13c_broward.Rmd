@@ -95,7 +95,7 @@ More information about each of the three new measures is provided in the Compari
 ###PARAMETERS###
 spcc10_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existing\\Broward\\Version4k.gdb"
 
-spcc13c_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs\\existing\\Verison_13c_full_d4_Broward.gdb'
+spcc13c_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs\\existing\\v13d_Broward.gdb'
 
 #SPCC 1.0 uses output location, as int den was generated from points.
 spcc10_intden_input_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existing\\Broward\\Version4k.gdb\\BE_03Design_02IntDens"
