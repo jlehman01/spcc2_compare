@@ -131,7 +131,7 @@ plcc_spcc <- st_read("K:/Projects/D4_CSHnetwork/Features/Transp/FDOT/D4_SPCC_PLC
   filter(!is.na(SPCC) & CC_Flag == 1) %>% 
   st_transform(crs)
 
-plcc_spcc_intersection <- st_intersection(st_zm(segments), plcc_spcc) %>% 
+plcc_spcc_intersection <- st_union(st_zm(segments), plcc_spcc) %>% 
   st_make_valid() %>% 
   select(class_base, class_13c, SPCC, PLCC)
 
