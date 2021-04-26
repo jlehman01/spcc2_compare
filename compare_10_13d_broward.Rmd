@@ -98,13 +98,13 @@ spcc10_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existin
 spcc13c_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs\\existing\\v13d_Broward.gdb'
 
 #SPCC 1.0 uses output location, as int den was generated from points.
-spcc10_intden_input_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existing\\StLucie\\Version4k.gdb\\BE_03Design_02IntDens"
+spcc10_intden_input_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existing\\Broward\\Version4k.gdb\\BE_03Design_02IntDens"
 
 spcc13_intden_input_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\inputs\\D4_General.gdb\\intsect_den"
 
-spcc10_diversity_input_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existing\\StLucie\\Version4k.gdb\\BE_02Diversity_01LU_count'
+spcc10_diversity_input_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existing\\Broward\\Version4k.gdb\\BE_02Diversity_01LU_count'
 
-spcc13c_input_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\inputs\\StLucie.gdb'
+spcc13c_input_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\inputs\\Broward.gdb'
 
 
 #####
