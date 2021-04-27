@@ -1,0 +1,62 @@
+---
+title: "Compare SPCC 1.0 & 1.3d - Palm Beach County"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+---
+
+```{r, include = FALSE, echo = FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+require(tidyverse)
+require(sf)
+#library(arcgisbinding)
+library(tmap)
+library(kableExtra)
+library(rpgcolorsr)
+
+epsg <- 2236
+
+tmap_mode("view")
+
+#arc.check_product()
+
+options(scipen=999)
+
+grid_with_summary <- readRDS("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/data_prep/demo_data/services_count_overlay/services_count_grid.rds")
+
+merged_points <- readRDS("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/data_prep/demo_data/services_count_overlay/services_merged_points.rds")
+```
+
+## Input Data
+
+The following POIs were queried from Open Street Map:
+
+-   Town Hall
+-   Post Office
+-   Police
+-   Fire Station
+-   Courthouse
+-   Library
+-   Government
+
+## Analysis
+
+500-foot grid cells were created. The number of unique POI categories within 1,000 feet from the center of each cell was calculated, returning a value of 0-7 for each cell, with 7 representing all POI types are present, and 0 representing no POIs present.
+
+### Map of Results
+
+*Note: you may need to zoom in to see grid cells.*
+
+```{r}
+
+
+tm_shape(grid_with_summary) + tm_fill(col = "count", palette = "-inferno") +
+  tm_shape(merged_points) + tm_dots(col = "type", 
+                                  border.lwd = 0,
+                                  palette = "viridis")
+
+```

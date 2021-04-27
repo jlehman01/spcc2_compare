@@ -72,47 +72,114 @@ osm_townhall <- opq(bbox = study_area_bbox) %>%
       add_osm_feature(key = 'amenity', value = "townhall") %>% 
   osmdata_sf()
 
+osm_townhall$osm_points$type <- "townhall"
+osm_townhall$osm_polygons$type <- "townhall"
+
 osm_postoffice <- opq(bbox = study_area_bbox) %>%
       add_osm_feature(key = 'amenity', value = "post_office") %>% 
   osmdata_sf()
+
+osm_postoffice$osm_points$type <- "postoffice"
+osm_postoffice$osm_polygons$type <- "postoffice"
 
 osm_police <- opq(bbox = study_area_bbox) %>%
       add_osm_feature(key = 'amenity', value = "police") %>% 
   osmdata_sf()
 
+osm_police$osm_points$type <- "police"
+osm_police$osm_polygons$type <- "police"
+
 osm_fire <- opq(bbox = study_area_bbox) %>%
       add_osm_feature(key = 'amenity', value = "fire_station") %>% 
   osmdata_sf()
+
+osm_fire$osm_points$type <- "fire"
+osm_fire$osm_polygons$type <- "fire"
 
 osm_courthouse <- opq(bbox = study_area_bbox) %>%
       add_osm_feature(key = 'amenity', value = "courthouse") %>% 
   osmdata_sf()
 
+osm_courthouse$osm_points$type <- "courthouse"
+osm_courthouse$osm_polygons$type <- "courthouse"
+
 osm_library <- opq(bbox = study_area_bbox) %>%
       add_osm_feature(key = 'amenity', value = "library") %>% 
   osmdata_sf()
+
+osm_library$osm_points$type <- "library"
+osm_library$osm_polygons$type <- "library"
 
 osm_government <- opq(bbox = study_area_bbox) %>%
       add_osm_feature(key = 'office', value = "government") %>% 
   osmdata_sf()
 
-merged_government <- bind_rows(osm_townhall$osm_points,
-          osm_postoffice$osm_points,
-          osm_police$osm_points,
-          osm_fire$osm_points,
-          osm_courthouse$osm_points,
-          osm_library$osm_points,
-          osm_government$osm_points) %>% 
-  mutate(count = 1) %>% 
-  select(name, count)
+osm_government$osm_points$type <- "government"
+osm_government$osm_polygons$type <- "government"
+
+merged_points <- bind_rows(osm_townhall$osm_points,
+                            st_centroid(osm_townhall$osm_polygons),
+                            osm_postoffice$osm_points,
+                            st_centroid(osm_postoffice$osm_polygons),
+                            osm_police$osm_points,
+                            st_centroid(osm_police$osm_polygons),
+                            osm_fire$osm_points,
+                            st_centroid(osm_fire$osm_polygons),
+                            osm_courthouse$osm_points,
+                            st_centroid(osm_courthouse$osm_polygons),
+                            osm_library$osm_points,
+                            st_centroid(osm_library$osm_polygons),
+                            osm_government$osm_points,
+                            st_centroid(osm_government$osm_polygons)) %>% 
+  dplyr::select(name, type) %>% 
+  st_transform(epsg)
+
+saveRDS(merged_points, "K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/data_prep/demo_data/services_count_overlay/services_merged_points.rds")
 
 ```
 
 ```{r}
 
-tm_shape(merged_government) + tm_dots()
+tm_shape(merged_points) + tm_dots(col = "type")
 
 ```
+
+
+#summarize by grid cells
+
+```{r}
+
+#make grids
+
+grid <- st_make_grid(boundary, 500) %>% 
+  st_as_sf() %>% 
+  mutate(gridID = row_number())
+
+grid_buffer_filtered <- grid %>% 
+  st_buffer(500) %>% 
+  st_filter(merged_points, .predicate = st_intersects)
+
+grid_subset <- grid %>% 
+  st_filter(grid_buffer_filtered, .predicate = st_intersects)
+
+#summarize to buffered grid, associate back to regular grid
+
+buffered_grid_with_points <- st_join(grid_buffer_filtered,
+          dplyr::select(merged_points, type))
+
+counts_by_cell <- buffered_grid_with_points %>% 
+  st_drop_geometry() %>% 
+  group_by(gridID) %>% 
+  summarise(count = n_distinct(type))
+
+grid_with_summary <- left_join(grid_subset, counts_by_cell) %>% 
+  drop_na(count)
+
+saveRDS(grid_with_summary, "K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/data_prep/demo_data/services_count_overlay/services_count_grid.rds")
+
+
+```
+
 
 
 ```{r}
