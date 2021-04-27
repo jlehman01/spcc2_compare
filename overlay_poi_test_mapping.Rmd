@@ -1,5 +1,5 @@
 ---
-title: "Compare SPCC 1.0 & 1.3d - Palm Beach County"
+title: "POI Services Analysis & Mapping"
 output:
   html_document:
     df_print: paged
@@ -30,6 +30,10 @@ grid_with_summary <- readRDS("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/data
 
 merged_points <- readRDS("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/data_prep/demo_data/services_count_overlay/services_merged_points.rds")
 ```
+
+## Summary
+
+The purpose of this page is to review the method and process for acquiring and summarizing service-oriented POIs in the D4 region.
 
 ## Input Data
 
