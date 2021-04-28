@@ -117,6 +117,12 @@ spcc13c <- as.raster(arc.raster(arc.open(paste0(spcc13c_gdb, "\\DetAnalyticLU_FI
 
 crs(spcc10) <- crs(spcc13c)
 
+#manually set cells to all values in SPCC to ensure colors are correct in symbolization
+all_classes <- c(2, 307, 330, 400, 500, 600, 700, 800, 801, 901, 902)
+spcc10[1,1:12] <- all_classes
+spcc13c[1,1:12] <- all_classes
+
+#check if cells are the same or different
 diff <- overlay(spcc10, spcc13c, fun=function(a,b) return(a==b))
 
 #calculate directional change
