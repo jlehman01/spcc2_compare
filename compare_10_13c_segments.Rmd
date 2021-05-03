@@ -1,5 +1,5 @@
 ---
-title: "Compare SPCC 1.0 & 1.3c Refined Smoothed Segments [DRAFT]"
+title: "Compare SPCC 1.0 & 1.3d Refined Smoothed Segments - Broward County"
 output:
   html_document:
     df_print: paged
@@ -11,12 +11,16 @@ editor_options:
 
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
-require(tidyverse)
-require(sf)
+library(tidyverse)
+library(sf)
 library(tmap)
 library(kableExtra)
 library(readr)
 library(foreign)
+library(esri2sf)
+
+#library(remotes)
+#install_github("yonghah/esri2sf")
 
 options(width = 2000)
 
@@ -38,15 +42,15 @@ The purpose of this page is to review SPCC refined smoothed analytic segments an
 
 This website compares version 1.3c to version 1.0. Version 1.0 represents the existing version of SPCC and provides a baseline for comparison. Version 1.3c includes updated data layers where new data is available in addition to refined measures for evaluating intersection density, building placement, and land use diversity.
 
-# SPCC 1.0 and SPCC 1.3c Mapping: Refined Smoothed Segments
+# SPCC 1.0 and SPCC 1.3d Mapping: Refined Smoothed Segments
 
 ```{r}
 
-segments <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/spcc_v2_13b/outputs/segment_smoothing/spcc_10_13c_refined_smoothed_segments_overlay.shp", quiet = TRUE) %>% 
+segments <- st_read("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs\\existing\\v13d_SegmentSmoothing.gdb", layer = "broward_refined_smoothed_segments_overlay", quiet = TRUE) %>% 
   rename(value_base = VALUE,
          value_13c = VALUE2) %>% 
   mutate(difference_flag = if_else(
-           value_base == value_13c, "No", "Yes"),
+         value_base == value_13c, "No", "Yes"),
          segment_ft = as.numeric(st_length(.)),
          class_base = case_when(
            value_base %in% c(1, 700) ~ "C1 - Natural",
@@ -70,7 +74,8 @@ segments <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/spcc_v2_13b/o
 
 
 class_change <- segments %>% 
-  filter(value_base < 900 & value_base != 700 & value_13c < 900 & value_13c != 700) %>% 
+  filter(value_base < 900 & value_base != 700 & 
+           value_13c < 900 & value_13c != 700) %>% 
   mutate(value_base_for_change = parse_number(class_base),
          value_14c_for_change = parse_number(class_13c),
          directional_change = case_when(
@@ -85,9 +90,9 @@ map1 <- tm_shape(segments) + tm_lines(col = "class_base", lwd = 2.5, palette = s
 
 spcc_palette2 <- c("#267300", '#D7C29E', "#FFFFD4", "#F5EE1C", "#FFCCCC", "#E60000", "#730000", "#0084A8")
 
-map2 <- tm_shape(segments) + tm_lines(col = "class_13c", lwd = 2.5, palette = spcc_palette2, title.col = "SPCC 1.3c Refined Smoothed", showNA = F) + tm_basemap("Esri.WorldImagery")
+map2 <- tm_shape(segments) + tm_lines(col = "class_13c", lwd = 2.5, palette = spcc_palette2, title.col = "SPCC 1.3d Refined Smoothed", showNA = F) + tm_basemap("Esri.WorldImagery")
 
-map3 <- tm_shape(class_change) + tm_lines(col = "directional_change", style = "cat", palette = 'viridis', lwd = 2.5, title.col = "SPCC 1.0 vs. 1.3c - Directional Change", popup.vars = c("value_base", "value_13c")) + tm_basemap("CartoDB.Positron")
+map3 <- tm_shape(class_change) + tm_lines(col = "directional_change", style = "cat", palette = 'viridis', lwd = 2.5, title.col = "SPCC 1.0 vs. 1.3d - Directional Change", popup.vars = c("value_base", "value_13c")) + tm_basemap("CartoDB.Positron")
 
 tmap_arrange(map1, map2, map3, ncol = 1, sync = TRUE)
 
@@ -95,9 +100,9 @@ tmap_arrange(map1, map2, map3, ncol = 1, sync = TRUE)
 
 **Note: The Directional Change map only shows changes between detailed analytic classes C1-C6.**
 
-### Cross tabulation of SPCC 1.0 versus SPCC 1.3c by Linear Feet
+### Cross tabulation of SPCC 1.0 versus SPCC 1.3d by Linear Feet
 
-The table below provides a tabular comparison of SPCC refined smoothed analytic versions 1.0 to 1.3c. The rows represent linear feet of each classification under SPCC 1.0, and the columns represent liner feet per classification under SPCC 1.3c.
+The table below provides a tabular comparison of SPCC refined smoothed analytic versions 1.0 to 1.3c. The rows represent linear feet of each classification under SPCC 1.0, and the columns represent liner feet per classification under SPCC 1.3d.
 
 ```{r}
 
@@ -114,29 +119,39 @@ colnames(crosstab)[1] <- "Refined Smoothed"
   kbl(digits = 0, format.args = list(big.mark = ",")) %>% 
   kable_paper("hover", full_width = F) %>% 
   column_spec(1, bold = T, border_right = T) %>% 
-  add_header_above(c("SPCC 1.0", "SPCC 1.3c" = 8))
+  add_header_above(c("SPCC 1.0", "SPCC 1.3d" = 8))
 
 
 ```
 
 ### SPCC-PLCC Alignment [Preliminary Analysis - Results Not Verified]
 
-```{r}
+```{r include = FALSE, echo = FALSE}
 
 crs <- st_crs(segments)
 
-plcc_spcc <- st_read("K:/Projects/D4_CSHnetwork/Features/Transp/FDOT/D4_SPCC_PLCC_Tracking/PLCC_SPCC_080520_Revised_Route_Events.shp", quiet = T) %>% 
-  st_zm() %>% 
-  st_make_valid() %>% 
-  filter(!is.na(SPCC) & CC_Flag == 1) %>% 
-  st_transform(crs)
+#read in plcc layer from arc rest api
 
-plcc_spcc_intersection <- st_union(st_zm(segments), plcc_spcc) %>% 
-  st_make_valid() %>% 
+url <- "https://services1.arcgis.com/O1JpcwDW8sjYuddV/ArcGIS/rest/services/OMD_SPCC/FeatureServer/1"
+plcc <- esri2sf(url) %>% 
+  st_transform(crs) %>% 
+  select(SPCC, PLCC)
+
+plcc_spcc_intersection <- st_intersection(st_zm(segments), plcc) %>% 
   select(class_base, class_13c, SPCC, PLCC)
 
-tm_shape(plcc_spcc_intersection) + tm_lines(lwd = 2.5, col = "PLCC", palette = "viridis", popup.vars = c("class_base", "class_13c", "SPCC", "PLCC"))
+tm_shape(plcc) + tm_lines(lwd = 2.5)
+
+, col = "PLCC", palette = "viridis", 
+                                            popup.vars = c("class_base", "class_13c", "SPCC", "PLCC"))
 ```
+
+
+
+
+tmap_mode(mode = "view")
+tm_shape(Florida_Railroads)+tm_lines(col="NET_DESC", palette = "Set1", lwd = 5)
+
 
 #### Table of SPCC-PLCC Alighment
 ```{r}
@@ -149,7 +164,7 @@ plcc_spcc_intersection %>%
          linear_feet = as.numeric(st_length(.))) %>%
   filter(linear_feet > 0) %>% 
   st_drop_geometry() %>% 
-  kbl(col.names = c("SPCC 1.3c", "SPCC 1.0", "PLCC", "Linear Feet")) %>% 
+  kbl(col.names = c("SPCC 1.3d", "SPCC 1.0", "PLCC", "Linear Feet")) %>% 
   kable_paper("hover", full_width = F)
 
 ```
