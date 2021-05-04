@@ -17,6 +17,8 @@ require(sf)
 library(tmap)
 library(kableExtra)
 library(rpgcolorsr)
+library(tmaptools)
+library(rmapshaper)
 
 epsg <- 2236
 
@@ -49,9 +51,58 @@ The following POIs were queried from Open Street Map:
 
 ## Analysis
 
-500-foot grid cells were created. The number of unique POI categories within 1,000 feet from the center of each cell was calculated, returning a value of 0-7 for each cell, with 7 representing all POI types are present, and 0 representing no POIs present.
+500-foot grid cells were created. The number of unique POI categories within 1,000 feet from the center of each cell was calculated, returning a value of 0-7 for each cell, with 7 representing all POI category types are present, and 0 representing no POI category types are present.
 
-### Map of Results
+### Summary of Results
+
+#### Map (Locations with score with score of 3 or higher)
+
+```{r}
+
+three_plus_points <- grid_with_summary %>% 
+  filter(count > 2) %>%
+  ms_dissolve() %>% 
+  ms_explode() %>% 
+  st_centroid() %>% 
+  rename(geometry = x)
+
+three_plus_gird <- grid_with_summary %>% 
+  filter(count > 2)
+
+geocoded_points <- rev_geocode_OSM(three_plus_points, projection = 2236)
+
+geocoded_points <- geocoded_points %>%
+  mutate(display_name = if_else(is.na(town),
+                                if_else(is.na(suburb), village, suburb),town),
+         display_name = if_else(is.na(display_name), city, display_name),
+         display_name = if_else(is.na(display_name),
+           case_when(office == "City of Coral Springs City Hall" ~ "Coral Springs"), display_name))
+           
+
+points_with_geocode <- cbind(three_plus_points, geocoded_points)
+
+tm_shape(three_plus_gird) + tm_polygons(col = "count", 
+                                  border.lwd = 0,
+                                  palette = "viridis", alpha = 0.5) +
+  tm_shape(points_with_geocode) + tm_dots(col = "#F29C20", size = 0.1,
+                                          perceptual = TRUE) +
+  tm_text("display_name", remove.overlap = TRUE, just = "bottom") +
+  tm_add_legend(type = "fill", label = "Place w/ 3+ Categories", col = "#F29C20", )
+```
+
+#### Table of Places With 3+ POI Categories Within 1,000 Feet
+
+```{r}
+
+points_with_geocode %>%
+  st_drop_geometry() %>%
+  distinct(county, display_name) %>% 
+  kbl(col.names = c("County", "Place Name")) %>% 
+  kable_paper("hover", full_width = F)
+
+```
+
+#### Map of all POIs + summarized grid cells
 
 *Note: you may need to zoom in to see grid cells.*
 
@@ -59,8 +110,7 @@ The following POIs were queried from Open Street Map:
 
 
 tm_shape(grid_with_summary) + tm_fill(col = "count", palette = "-inferno") +
-  tm_shape(merged_points) + tm_dots(col = "type", 
-                                  border.lwd = 0,
+  tm_shape(merged_points) + tm_dots(col = "type", border.lwd = 0,
                                   palette = "viridis")
 
 ```
