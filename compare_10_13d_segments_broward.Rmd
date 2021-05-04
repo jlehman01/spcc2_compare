@@ -1,5 +1,5 @@
 ---
-title: "Compare SPCC 1.0 & 1.3d Refined Smoothed Segments - Broward County"
+title: "Compare SPCC 1.0 & 1.3d Refined Smoothed Segments - Indian River County"
 output:
   html_document:
     df_print: paged
@@ -40,13 +40,16 @@ spcc_palette <- c("#267300", '#D7C29E', "#FFFFD4",
 
 The purpose of this page is to review SPCC refined smoothed analytic segments and compare them to version 1.0. This comparison report is still in development, and further maps and reports will be added as they are developed.
 
-This website compares version 1.3c to version 1.0. Version 1.0 represents the existing version of SPCC and provides a baseline for comparison. Version 1.3c includes updated data layers where new data is available in addition to refined measures for evaluating intersection density, building placement, and land use diversity.
+This website compares version 1.3d to version 1.0. Version 1.0 represents the existing version of SPCC and provides a baseline for comparison. Version 1.3d includes updated data layers where new data is available in addition to refined measures for evaluating intersection density, building placement, and land use diversity.
 
 # SPCC 1.0 and SPCC 1.3d Mapping: Refined Smoothed Segments
 
 ```{r}
 
-segments <- st_read("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs\\existing\\v13d_SegmentSmoothing.gdb", layer = "broward_refined_smoothed_segments_overlay", quiet = TRUE) %>% 
+gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs\\existing\\v13d_SegmentSmoothing.gdb"
+layername <- "indianriver_refined_smoothed_segments_overlay"
+
+segments <- st_read(gdb, layer = layername, quiet = TRUE) %>%
   rename(value_base = VALUE,
          value_13d = VALUE2) %>% 
   mutate(difference_flag = if_else(
