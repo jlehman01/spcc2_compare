@@ -51,6 +51,9 @@ This website compares version 1.3d to version 1.0. Version 1.0 represents the ex
 gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs\\existing\\v13d_SegmentSmoothing.gdb"
 layername <- "pbc_refined_smoothed_segments_overlay"
 
+ref_area <- st_read("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\inputs\\PBC.gdb",
+          layer = "RefArea", quiet = TRUE) #reference area (for clipping segments and plcc layer)
+
 segments <- st_read(gdb, layer = layername, quiet = TRUE) %>%
   st_zm() %>% 
   rename(value_base = VALUE2,
@@ -128,6 +131,7 @@ map1 <- tm_shape(segments) +
            title.col = "SPCC 1.0 Refined Smoothed") +
   tm_add_legend(type = "fill", labels = legend_10_palette$class_base, 
                 col = legend_10_palette$color_base) +
+      tm_shape(ref_area) + tm_borders(col = "#a80084") +
   tm_basemap("Esri.WorldImagery")
 
 
@@ -136,6 +140,7 @@ map2 <- tm_shape(segments) +
            showNA = F) +
   tm_add_legend(type = "fill", labels = legend_13d_palette$class_13d, 
                 col = legend_13d_palette$color_13d) +
+      tm_shape(ref_area) + tm_borders(col = "#a80084") +
   tm_basemap("Esri.WorldImagery")
 
 map3 <- tm_shape(class_change) + 
@@ -143,6 +148,7 @@ map3 <- tm_shape(class_change) +
            palette = 'viridis', lwd = 2.5, 
            title.col = "SPCC 1.0 vs. 1.3d - Directional Change", 
            popup.vars = c("value_base", "value_13d")) + 
+      tm_shape(ref_area) + tm_borders(col = "#a80084") +
   tm_basemap("CartoDB.Positron")
 
 tmap_arrange(map1, map2, map3, ncol = 1, sync = TRUE)
