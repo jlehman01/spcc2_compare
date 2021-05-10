@@ -50,16 +50,16 @@ gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs
 layername <- "indianriver_refined_smoothed_segments_overlay"
 
 segments <- st_read(gdb, layer = layername, quiet = TRUE) %>%
-  rename(value_base = VALUE,
-         value_13d = VALUE2) %>% 
+  rename(value_base = VALUE2,
+         value_13d = VALUE) %>% 
   mutate(difference_flag = if_else(
          value_base == value_13d, "No", "Yes"),
          segment_ft = as.numeric(st_length(.)),
          class_base = case_when(
            value_base %in% c(1, 700) ~ "C1 - Natural",
            value_base == 2 ~ "C2 - Rural",
-           value_base == 307 ~ "C3R - Suburan Residential",
-           value_base %in% c(330, 800, 801) ~ "C3C - Suburan Commercial",
+           value_base == 307 ~ "C3R - Suburban Residential",
+           value_base %in% c(330, 800, 801) ~ "C3C - Suburban Commercial",
            value_base == 400 ~ "C4 - Urban General",
            value_base == 500 ~ "C5 - Urban Center",
            value_base == 600 ~ "C6 - Urban Core",
@@ -76,8 +76,8 @@ segments <- st_read(gdb, layer = layername, quiet = TRUE) %>%
          class_13d = case_when(
            value_13d %in% c(1, 700) ~ "C1 - Natural",
            value_13d == 2 ~ "C2 - Rural",
-           value_13d == 307 ~ "C3R - Suburan Residential",
-           value_13d %in% c(330, 800, 801) ~ "C3C - Suburan Commercial",
+           value_13d == 307 ~ "C3R - Suburban Residential",
+           value_13d %in% c(330, 800, 801) ~ "C3C - Suburban Commercial",
            value_13d == 400 ~ "C4 - Urban General",
            value_13d == 500 ~ "C5 - Urban Center",
            value_13d == 600 ~ "C6 - Urban Core",
@@ -185,14 +185,29 @@ crs <- st_crs(segments)
 url <- "https://services1.arcgis.com/O1JpcwDW8sjYuddV/ArcGIS/rest/services/OMD_SPCC/FeatureServer/1"
 plcc <- esri2sf(url) %>% 
   st_transform(crs) %>% 
-  select(SPCC, PLCC)
+  dplyr::select(SPCC, PLCC)
 
-#plcc_spcc_intersection <- st_intersection(st_zm(segments), plcc) %>% 
-#  select(class_base, class_13d, SPCC, PLCC)
+#adjust precision to accoutn for slight differences, and intersect
 
-tm_shape(plcc) + tm_lines(lwd = 2.5, col = "PLCC", 
+st_precision(plcc) <- 10
+st_precision(segments) <- 10
+
+plcc_spcc_intersection <- st_intersection(st_zm(segments), plcc) %>% 
+  dplyr::select(class_base, class_13d, SPCC, PLCC)
+
+tm_shape(plcc_spcc_intersection) + tm_lines(lwd = 2.5, col = "PLCC", 
                           palette = "viridis")
+
+
+tm_shape(plcc) + tm_lines(col ="red", lwd = 2) +
+  tm_shape(segments) + tm_lines(col ="blue", lwd = 3)
+
 ```
+
+
+
+
+
 
 #### Table of SPCC-PLCC Alighment [In Development]
 ```{r eval = FALSE}

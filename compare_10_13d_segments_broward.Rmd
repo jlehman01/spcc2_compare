@@ -18,6 +18,7 @@ library(kableExtra)
 library(readr)
 library(foreign)
 library(esri2sf)
+library(rmapshaper)
 
 #library(remotes)
 #install_github("yonghah/esri2sf")
@@ -46,20 +47,33 @@ This website compares version 1.3d to version 1.0. Version 1.0 represents the ex
 
 ```{r}
 
+#parameters to change from county to county
+
+ref_area <- st_read("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\inputs\\Broward.gdb",
+          layer = "RefArea") #reference area (for clipping segments and plcc layer)
+
+layername <- "broward_refined_smoothed_segments_overlay"
+
 gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs\\existing\\v13d_SegmentSmoothing.gdb"
-layername <- "indianriver_refined_smoothed_segments_overlay"
+
+```
+
+
+```{r}
 
 segments <- st_read(gdb, layer = layername, quiet = TRUE) %>%
-  rename(value_base = VALUE,
-         value_13d = VALUE2) %>% 
+  st_zm() %>% 
+  filter(as.numeric(st_length(.)) > 0) %>% 
+  rename(value_base = VALUE2,
+         value_13d = VALUE) %>% 
   mutate(difference_flag = if_else(
          value_base == value_13d, "No", "Yes"),
          segment_ft = as.numeric(st_length(.)),
          class_base = case_when(
            value_base %in% c(1, 700) ~ "C1 - Natural",
            value_base == 2 ~ "C2 - Rural",
-           value_base == 307 ~ "C3R - Suburan Residential",
-           value_base %in% c(330, 800, 801) ~ "C3C - Suburan Commercial",
+           value_base == 307 ~ "C3R - Suburban Residential",
+           value_base %in% c(330, 800, 801) ~ "C3C - Suburban Commercial",
            value_base == 400 ~ "C4 - Urban General",
            value_base == 500 ~ "C5 - Urban Center",
            value_base == 600 ~ "C6 - Urban Core",
@@ -76,8 +90,8 @@ segments <- st_read(gdb, layer = layername, quiet = TRUE) %>%
          class_13d = case_when(
            value_13d %in% c(1, 700) ~ "C1 - Natural",
            value_13d == 2 ~ "C2 - Rural",
-           value_13d == 307 ~ "C3R - Suburan Residential",
-           value_13d %in% c(330, 800, 801) ~ "C3C - Suburan Commercial",
+           value_13d == 307 ~ "C3R - Suburban Residential",
+           value_13d %in% c(330, 800, 801) ~ "C3C - Suburban Commercial",
            value_13d == 400 ~ "C4 - Urban General",
            value_13d == 500 ~ "C5 - Urban Center",
            value_13d == 600 ~ "C6 - Urban Core",
@@ -92,7 +106,8 @@ segments <- st_read(gdb, layer = layername, quiet = TRUE) %>%
            value_13d == 600 ~ "#730000",
            value_13d %in% c(900, 901, 902) ~ "#0084A8"),
          ) %>% 
-  dplyr::filter(segment_ft > 0)
+  dplyr::filter(segment_ft > 0) %>% 
+  ms_clip(ref_area)
 
 class_change <- segments %>% 
   filter(value_base < 900 & value_base != 700 & 
@@ -163,7 +178,7 @@ crosstab <- segments %>%
 
 colnames(crosstab)[1] <- "Refined Smoothed"
 
-  crosstab %>% 
+crosstab %>% 
   kbl(digits = 0, format.args = list(big.mark = ",")) %>% 
   kable_paper("hover", full_width = F) %>% 
   column_spec(1, bold = T, border_right = T) %>% 
@@ -181,16 +196,25 @@ crs <- st_crs(segments)
 #read in plcc layer from arc rest api
 
 url <- "https://services1.arcgis.com/O1JpcwDW8sjYuddV/ArcGIS/rest/services/OMD_SPCC/FeatureServer/1"
+
 plcc <- esri2sf(url) %>% 
   st_transform(crs) %>% 
-  select(SPCC, PLCC)
+  dplyr::select(SPCC, PLCC) %>% 
+  ms_clip(ref_area) %>% 
+  mutate(plccID = row_number())
 
-#plcc_spcc_intersection <- st_intersection(st_zm(segments), plcc) %>% 
-#  select(class_base, class_13d, SPCC, PLCC)
+#adjust precision to account for slight spatial differences, and intersect
 
-tm_shape(plcc) + tm_lines(lwd = 2.5, col = "PLCC", 
-                          palette = "viridis")
+plcc_buffer <- st_buffer(plcc, 5)
+
+plcc_join <- st_join(plcc_buffer, segments,
+          largest = TRUE) %>% 
+  st_drop_geometry() 
+
+plcc_spcc_merged <- left_join(dplyr::select(plcc, plccID), plcc_join, by = "plccID")
+
 ```
+
 
 #### Table of SPCC-PLCC Alighment [In Development]
 ```{r eval = FALSE}
