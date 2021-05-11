@@ -1,5 +1,5 @@
 ---
-title: "Compare SPCC 1.0 & 1.3d Refined Smoothed Segments - Indian River County"
+title: "Compare SPCC 1.0 & 1.3d Refined Smoothed Segments - Broward County"
 output:
   html_document:
     df_print: paged
@@ -191,45 +191,81 @@ crosstab %>%
 
 ### SPCC-PLCC Alignment [In Development]
 
-```{r eval = FALSE}
+#### Map of SPCC-PLCC Alignment
+
+```{r }
 
 crs <- st_crs(segments)
 
 #read in plcc layer from arc rest api
 
-url <- "https://services1.arcgis.com/O1JpcwDW8sjYuddV/ArcGIS/rest/services/OMD_SPCC/FeatureServer/1"
+# url <- "https://services1.arcgis.com/O1JpcwDW8sjYuddV/ArcGIS/rest/services/OMD_SPCC/FeatureServer/1"
+ 
+# plcc <- esri2sf(url, quiet = T) %>% 
+#   st_transform(crs)  
 
-plcc <- esri2sf(url) %>% 
-  st_transform(crs) %>% 
-  dplyr::select(SPCC, PLCC) %>% 
-  ms_clip(ref_area) %>% 
-  mutate(plccID = row_number())
+# 
+# saveRDS(plcc, "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\spcc2_compare\\data\\plcc.Rds")
+
+plcc <- readRDS("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\spcc2_compare\\data\\plcc.Rds") %>%    dplyr::select(SPCC, PLCC) %>% 
+   ms_clip(ref_area) %>% 
+   mutate(plccID = row_number())
 
 #adjust precision to account for slight spatial differences, and intersect
 
-plcc_buffer <- st_buffer(plcc, 5)
+spcc_buffer <- st_buffer(segments, 5)
 
-plcc_join <- st_join(plcc_buffer, segments,
-          largest = TRUE) %>% 
-  st_drop_geometry() 
+plcc_join <- st_join(plcc, spcc_buffer,
+          largest = TRUE)
 
-plcc_spcc_merged <- left_join(dplyr::select(plcc, plccID), plcc_join, by = "plccID")
+plcc_join <- plcc_join %>% 
+  mutate(plcc_10_flag = case_when(
+                SPCC != class_base ~ "SPCC 1.0 Base and Future Different",
+                SPCC == class_base ~ "SPCC 1.0 Base and Future Align"),
+         plcc_improvement = case_when(
+                SPCC != PLCC & class_base != PLCC & 
+                SPCC == class_base & PLCC == class_13d ~ "SPCC 1.3 Improvement Over SPCC 1.0",
+                SPCC != PLCC & class_base != PLCC & 
+                SPCC == class_base & PLCC != class_13d ~ "SPCC 1.3 Not an Improvement Over SPCC 1.0",
+                SPCC == PLCC & class_base == PLCC ~ "SPCC 1.0 Base and Future and SPCC 1.3 Align with PLCC",
+                SPCC != class_base ~ "SPCC 1.0 Base and Future Different - Comparison Not Possible"
+         )
+)
+
+tm_shape(plcc_join) + tm_lines(col = "plcc_improvement", 
+                               palette = "inferno", lwd = 4,
+                               popup.vars = c("plccID", "SPCC", "PLCC", "class_base", "class_13d"),
+                               title.col = "SPCC-PLCC Improvement Category")
 
 ```
 
+#### Table of Summarized SPCC-PLCC Alighment
 
-#### Table of SPCC-PLCC Alighment [In Development]
-```{r eval = FALSE}
+```{r}
 
-plcc_spcc_intersection %>%
-  select(class_13d, SPCC, PLCC) %>% 
-  mutate(class_13d = str_remove_all(class_13d, " "),
-         SPCC = str_remove_all(SPCC, " "),
-         PLCC = str_remove_all(PLCC, " "),
-         linear_feet = as.numeric(st_length(.))) %>%
-  filter(linear_feet > 0) %>% 
+plcc_join %>%
+  select(plcc_improvement) %>% 
+  mutate(linear_miles = as.numeric(st_length(.))/5280) %>%
   st_drop_geometry() %>% 
-  kbl(col.names = c("SPCC 1.3d", "SPCC 1.0", "PLCC", "Linear Feet")) %>% 
+  filter(linear_miles > 0) %>%
+  group_by(plcc_improvement) %>% 
+  summarise(linear_miles = sum(linear_miles)) %>% 
+  kbl(digits = 3) %>% 
+  kable_paper("hover", full_width = F)
+
+```
+
+#### Table of All PLCC Segments
+```{r}
+
+plcc_join %>%
+  select(plccID, class_base, class_13d, SPCC, PLCC, plcc_improvement) %>% 
+  mutate(linear_miles = as.numeric(st_length(.))/5280) %>%
+  st_drop_geometry() %>% 
+  filter(linear_miles > 0) %>%
+  arrange(desc(linear_miles)) %>% 
+  kbl(col.names = c("PLCC ID", "SPCC 1.0 Base", "SPCC 1.3d Base", "SPCC 1.0 Future", 
+                    "PLCC", "Improvement Category", "Linear Miles"), digits = 3) %>%
   kable_paper("hover", full_width = F)
 
 ```

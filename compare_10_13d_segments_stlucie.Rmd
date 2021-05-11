@@ -18,6 +18,7 @@ library(kableExtra)
 library(readr)
 library(foreign)
 library(esri2sf)
+library(rmapshaper)
 
 #library(remotes)
 #install_github("yonghah/esri2sf")
@@ -52,7 +53,8 @@ layername <- "stlucie_refined_smoothed_segments_overlay"
 ref_area <- st_read("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\inputs\\StLucie.gdb",
           layer = "RefArea", quiet = TRUE) #reference area (for clipping segments and plcc layer)
 
-segments <- st_read(gdb, layer = layername, quiet = TRUE) %>% 
+segments <- st_read(gdb, layer = layername, quiet = TRUE) %>%
+  st_zm() %>% 
   rename(value_base = VALUE2,
          value_13d = VALUE) %>% 
   mutate(difference_flag = if_else(
@@ -181,36 +183,81 @@ table_length <- length(names(crosstab)) - 1
 
 ### SPCC-PLCC Alignment [In Development]
 
-```{r eval = FALSE}
+#### Map of SPCC-PLCC Alignment
+
+```{r }
 
 crs <- st_crs(segments)
 
 #read in plcc layer from arc rest api
 
-url <- "https://services1.arcgis.com/O1JpcwDW8sjYuddV/ArcGIS/rest/services/OMD_SPCC/FeatureServer/1"
-plcc <- esri2sf(url) %>% 
-  st_transform(crs) %>% 
-  select(SPCC, PLCC)
+# url <- "https://services1.arcgis.com/O1JpcwDW8sjYuddV/ArcGIS/rest/services/OMD_SPCC/FeatureServer/1"
+# 
+# plcc <- esri2sf(url, quiet = T) %>% 
+#   st_transform(crs) %>% 
+#   dplyr::select(SPCC, PLCC) %>% 
+#   ms_clip(ref_area) %>% 
+#   mutate(plccID = row_number())
 
-#plcc_spcc_intersection <- st_intersection(st_zm(segments), plcc) %>% 
-#  select(class_base, class_13d, SPCC, PLCC)
+plcc <- readRDS("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\spcc2_compare\\data\\plcc.Rds") %>%    dplyr::select(SPCC, PLCC) %>% 
+   ms_clip(ref_area) %>% 
+   mutate(plccID = row_number())
 
-tm_shape(plcc) + tm_lines(lwd = 2.5, col = "PLCC", 
-                          palette = "viridis")
+#adjust precision to account for slight spatial differences, and intersect
+
+spcc_buffer <- st_buffer(segments, 5)
+
+plcc_join <- st_join(plcc, spcc_buffer,
+          largest = TRUE)
+
+plcc_join <- plcc_join %>% 
+  mutate(plcc_10_flag = case_when(
+                SPCC != class_base ~ "SPCC 1.0 Base and Future Different",
+                SPCC == class_base ~ "SPCC 1.0 Base and Future Align"),
+         plcc_improvement = case_when(
+                SPCC != PLCC & class_base != PLCC & 
+                SPCC == class_base & PLCC == class_13d ~ "SPCC 1.3 Improvement Over SPCC 1.0",
+                SPCC != PLCC & class_base != PLCC & 
+                SPCC == class_base & PLCC != class_13d ~ "SPCC 1.3 Not an Improvement Over SPCC 1.0",
+                SPCC == PLCC & class_base == PLCC ~ "SPCC 1.0 Base and Future and SPCC 1.3 Align with PLCC",
+                SPCC != class_base ~ "SPCC 1.0 Base and Future Different - Comparison Not Possible"
+         )
+)
+
+tm_shape(plcc_join) + tm_lines(col = "plcc_improvement", 
+                               palette = "inferno", lwd = 4,
+                               popup.vars = c("plccID", "SPCC", "PLCC", "class_base", "class_13d"),
+                               title.col = "SPCC-PLCC Improvement Category")
+
 ```
 
-#### Table of SPCC-PLCC Alighment [In Development]
-```{r eval = FALSE}
+#### Table of Summarized SPCC-PLCC Alighment
 
-plcc_spcc_intersection %>%
-  select(class_13d, SPCC, PLCC) %>% 
-  mutate(class_13d = str_remove_all(class_13d, " "),
-         SPCC = str_remove_all(SPCC, " "),
-         PLCC = str_remove_all(PLCC, " "),
-         linear_feet = as.numeric(st_length(.))) %>%
-  filter(linear_feet > 0) %>% 
+```{r}
+
+plcc_join %>%
+  select(plcc_improvement) %>% 
+  mutate(linear_miles = as.numeric(st_length(.))/5280) %>%
   st_drop_geometry() %>% 
-  kbl(col.names = c("SPCC 1.3d", "SPCC 1.0", "PLCC", "Linear Feet")) %>% 
+  filter(linear_miles > 0) %>%
+  group_by(plcc_improvement) %>% 
+  summarise(linear_miles = sum(linear_miles)) %>% 
+  kbl(digits = 3) %>% 
+  kable_paper("hover", full_width = F)
+
+```
+
+#### Table of All PLCC Segments
+```{r}
+
+plcc_join %>%
+  select(plccID, class_base, class_13d, SPCC, PLCC, plcc_improvement) %>% 
+  mutate(linear_miles = as.numeric(st_length(.))/5280) %>%
+  st_drop_geometry() %>% 
+  filter(linear_miles > 0) %>%
+  arrange(desc(linear_miles)) %>% 
+  kbl(col.names = c("PLCC ID", "SPCC 1.0 Base", "SPCC 1.3d Base", "SPCC 1.0 Future", 
+                    "PLCC", "Improvement Category", "Linear Miles"), digits = 3) %>%
   kable_paper("hover", full_width = F)
 
 ```
