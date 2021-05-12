@@ -1,5 +1,5 @@
 ---
-title: "Compare SPCC 1.0 & 1.3d - Broward County"
+title: "Compare SPCC 1.0 & 1.3d - Future - Broward County"
 output:
   html_document:
     df_print: paged
@@ -53,7 +53,7 @@ remove_0_reclass <- matrix(
 
 # Overview
 
-The purpose of this page is to review SPCC version 1.3d and compare it to version 1.0. Version 1.0 represents the existing version of SPCC and provides a baseline for comparison. Version 1.3d includes updated data layers where new data is available in addition to refined measures for evaluating intersection density, building placement, and land use diversity. Further, version 1.3d includes modified weights for density, diversity, and design scores. 1.3d differs from 1.3b in that the building setback search radius was changed from 1320 feet to 250 feet.
+The purpose of this page is to review SPCC version 1.3d and compare it to version 1.0. Version 1.0 represents the future version of SPCC and provides a baseline for comparison. Version 1.3d includes updated data layers where new data is available in addition to refined measures for evaluating intersection density, building placement, and land use diversity. Further, version 1.3d includes modified weights for density, diversity, and design scores. 1.3d differs from 1.3b in that the building setback search radius was changed from 1320 feet to 250 feet.
 
 #### Updated Weights in 1.3 Versions
 
@@ -93,16 +93,16 @@ More information about each of the three new measures is provided in the Compari
 ```{r}
 
 ###PARAMETERS###
-spcc10_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existing\\Broward\\Version4k.gdb"
+spcc10_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Future\\Broward\\Version4k.gdb"
 
-spcc13c_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs\\existing\\v13d_Broward.gdb'
+spcc13c_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs\\future\\v13d_Broward.gdb'
 
 #SPCC 1.0 uses output location, as int den was generated from points.
-spcc10_intden_input_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existing\\Broward\\Version4k.gdb\\BE_03Design_02IntDens"
+spcc10_intden_input_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Future\\Broward\\Version4k.gdb\\BE_03Design_02IntDens"
 
 spcc13_intden_input_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\inputs\\D4_General.gdb\\intsect_den"
 
-spcc10_diversity_input_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Existing\\Broward\\Version4k.gdb\\BE_02Diversity_01LU_count'
+spcc10_diversity_input_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Future\\Broward\\Version4k.gdb\\BE_02Diversity_01LU_count'
 
 spcc13c_input_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\inputs\\Broward.gdb'
 
