@@ -55,8 +55,8 @@ ref_area <- st_read("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2
 
 segments <- st_read(gdb, layer = layername, quiet = TRUE) %>%
   st_zm() %>% 
-  rename(value_base = VALUE2,
-         value_13d = VALUE) %>% 
+  rename(value_base = VALUE,
+         value_13d = VALUE2) %>% 
   mutate(difference_flag = if_else(
          value_base == value_13d, "No", "Yes"),
          segment_ft = as.numeric(st_length(.)),
