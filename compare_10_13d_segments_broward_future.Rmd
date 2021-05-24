@@ -19,6 +19,7 @@ library(readr)
 library(foreign)
 library(esri2sf)
 library(rmapshaper)
+library(DT)
 
 #library(remotes)
 #install_github("yonghah/esri2sf")
@@ -136,19 +137,20 @@ legend_13d_palette  <- segments %>%
   arrange(class_13d)
 
 map1 <- tm_shape(segments) + 
-  tm_lines(col = "color_base", lwd = 2.5, 
-           title.col = "SPCC 1.0 Refined Smoothed") +
+  tm_lines(col = "color_base", lwd = 2.5) +
   tm_add_legend(type = "fill", labels = legend_10_palette$class_base, 
-                col = legend_10_palette$color_base) +
+                col = legend_10_palette$color_base,
+                title = "SPCC 1.0 Refined Smoothed") +
   tm_shape(ref_area) + tm_borders(col = "#a80084") +
   tm_basemap("Esri.WorldImagery")
 
 
 map2 <- tm_shape(segments) + 
-  tm_lines(col = "color_13d", lwd = 2.5, title.col = "SPCC 1.3d Refined Smoothed", 
+  tm_lines(col = "color_13d", lwd = 2.5, 
            showNA = F) +
   tm_add_legend(type = "fill", labels = legend_13d_palette$class_13d, 
-                col = legend_13d_palette$color_13d) +
+                col = legend_13d_palette$color_13d,
+                title = "SPCC 1.3d Refined Smoothed") +
   tm_shape(ref_area) + tm_borders(col = "#a80084") +
   tm_basemap("Esri.WorldImagery")
 
@@ -219,54 +221,100 @@ plcc_join <- st_join(plcc, spcc_buffer,
           largest = TRUE)
 
 plcc_join <- plcc_join %>% 
-  mutate(plcc_10_flag = case_when(
-                SPCC != class_base ~ "SPCC 1.0 Base and Future Different",
-                SPCC == class_base ~ "SPCC 1.0 Base and Future Align"),
-         plcc_improvement = case_when(
-                SPCC != PLCC & class_base != PLCC & 
-                SPCC == class_base & PLCC == class_13d ~ "SPCC 1.3 Improvement Over SPCC 1.0",
-                SPCC != PLCC & class_base != PLCC & 
-                SPCC == class_base & PLCC != class_13d ~ "SPCC 1.3 Not an Improvement Over SPCC 1.0",
-                SPCC == PLCC & class_base == PLCC ~ "SPCC 1.0 Base and Future and SPCC 1.3 Align with PLCC",
-                SPCC != class_base ~ "SPCC 1.0 Base and Future Different - Comparison Not Possible"
+  mutate(plcc_improvement = case_when(
+                SPCC == PLCC & class_13d != PLCC~ "1.3 Aligns with PLCC, 1.0 Does not",
+                SPCC != PLCC & class_13d != PLCC ~ "1.0 & 1.3 Do Not Align with PLCC",
+                SPCC != PLCC & class_13d == PLCC ~ "1.3 Aligns with PLCC, 1.0 Does not",
+                SPCC == PLCC & class_13d == PLCC ~ "1.0 & 1.3 Align with PLCC"),
+         spcc10_overall = case_when(
+                SPCC == PLCC ~ "SPCC 1.0 Aligns with PLCC"),
+         spcc13d_overall = case_when(
+                class_13d == PLCC ~ "SPCC 1.3d Aligns with PLCC")
          )
-)
 
 tm_shape(plcc_join) + tm_lines(col = "plcc_improvement", 
-                               palette = "inferno", lwd = 4,
-                               popup.vars = c("plccID", "SPCC", "PLCC", "class_base", "class_13d"),
+                               palette = "-viridis", lwd = 4,
+                               popup.vars = c("plccID", "SPCC", "PLCC", "class_13d"),
                                title.col = "SPCC-PLCC Improvement Category")
+
 
 ```
 
-#### Table of Summarized SPCC-PLCC Alighment
+#### Table of Summarized SPCC 1.0 - SPCC 1.3d - PLCC Alighment
 
 ```{r}
 
-plcc_join %>%
+spcc_plcc_table_summary_data <- plcc_join %>%
   select(plcc_improvement) %>% 
   mutate(linear_miles = as.numeric(st_length(.))/5280) %>%
   st_drop_geometry() %>% 
   filter(linear_miles > 0) %>%
   group_by(plcc_improvement) %>% 
-  summarise(linear_miles = sum(linear_miles)) %>% 
+  summarise(linear_miles = sum(linear_miles))
+
+spcc_plcc_table_summary_data %>% 
   kbl(digits = 3) %>% 
   kable_paper("hover", full_width = F)
 
 ```
 
+#### Comparing Linear Miles of Alignment with PLCC by SPCC Version
+
+*SPCC 1.0 Alignment Summary*
+```{r}
+
+comparison <- plcc_join %>% 
+  mutate(linear_miles = as.numeric(st_length(.))/5280) %>%
+  st_drop_geometry() %>% 
+  filter(linear_miles > 0) %>% 
+  mutate(total_linear_miles = sum(linear_miles)) %>% 
+  select(linear_miles, total_linear_miles, spcc10_overall, spcc13d_overall)
+
+comparison_names <- c("SPCC Version", "Miles of Alignment", "Total PLCC Miles", "% of Alignment", "# of Segments in Alignment")
+
+comparison %>%
+  select(linear_miles, total_linear_miles, spcc10_overall) %>% 
+  group_by(spcc10_overall) %>% 
+  summarise(spcc_10_miles = sum(linear_miles),
+            total_linear_miles = first(total_linear_miles),
+            spcc_10_percent = spcc_10_miles / total_linear_miles,
+            spcc_10_segment_count = n()) %>% 
+  drop_na(spcc10_overall) %>% 
+  kbl(digits = 3, col.names = comparison_names) %>% 
+  kable_paper("hover", full_width = F)
+  
+```
+
+*SPCC 1.3d Alignment Summary*
+```{r}
+comparison %>%
+  select(linear_miles, total_linear_miles, spcc13d_overall) %>% 
+  group_by(spcc13d_overall) %>% 
+  summarise(spcc_13d_miles = sum(linear_miles),
+            total_linear_miles = first(total_linear_miles),
+            spcc_13d_percent = spcc_13d_miles / total_linear_miles,
+            spcc_13d_segment_count = n()) %>% 
+  drop_na(spcc13d_overall)%>% 
+  kbl(digits = 3, col.names = comparison_names) %>% 
+  kable_paper("hover", full_width = F)
+```
+
+
 #### Table of All PLCC Segments
 ```{r}
 
+plcc_segment_names = c("PLCC ID", "SPCC 1.3d", "SPCC 1.0", 
+                    "PLCC", "Improvement Category", "Linear Miles")
+
 plcc_join %>%
-  select(plccID, class_base, class_13d, SPCC, PLCC, plcc_improvement) %>% 
+  select(plccID, class_13d, SPCC, PLCC, plcc_improvement) %>% 
   mutate(linear_miles = as.numeric(st_length(.))/5280) %>%
   st_drop_geometry() %>% 
   filter(linear_miles > 0) %>%
   arrange(desc(linear_miles)) %>% 
-  kbl(col.names = c("PLCC ID", "SPCC 1.0 Base", "SPCC 1.3d Base", "SPCC 1.0 Future", 
-                    "PLCC", "Improvement Category", "Linear Miles"), digits = 3) %>%
-  kable_paper("hover", full_width = F)
+  datatable(class = 'cell-border stripe', colnames = plcc_segment_names)
+
+
 
 ```
 
