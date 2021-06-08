@@ -65,8 +65,8 @@ gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs
 segments <- st_read(gdb, layer = layername, quiet = TRUE) %>%
   st_zm() %>% 
   filter(as.numeric(st_length(.)) > 0) %>% 
-  rename(value_base = VALUE,
-         value_13d = VALUE2) %>% 
+  rename(value_base = VALUE2,
+         value_13d = VALUE) %>% 
   mutate(difference_flag = if_else(
          value_base == value_13d, "No", "Yes"),
          segment_ft = as.numeric(st_length(.)),
@@ -211,9 +211,10 @@ crs <- st_crs(segments)
 # 
 # saveRDS(plcc, "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\spcc2_compare\\data\\plcc.Rds")
 
-plcc <- readRDS("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\spcc2_compare\\data\\plcc.Rds") %>%    dplyr::select(SPCC, PLCC, FM_Num) %>% 
-   ms_clip(ref_area) %>% 
-   mutate(plccID = row_number())
+plcc <- readRDS("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\spcc2_compare\\data\\plcc.Rds") %>% 
+  dplyr::select(SPCC, PLCC, FM_Num) %>% 
+  ms_clip(ref_area) %>% 
+  mutate(plccID = row_number())
 
 #adjust precision to account for slight spatial differences, and intersect
 
@@ -224,7 +225,7 @@ plcc_join <- st_join(plcc, spcc_buffer,
 
 plcc_join <- plcc_join %>% 
   mutate(plcc_improvement = case_when(
-                SPCC == PLCC & class_13d != PLCC~ "1.3 Aligns with PLCC, 1.0 Does not",
+                SPCC == PLCC & class_13d != PLCC~ "1.0 Aligns with PLCC, 1.3 Does not",
                 SPCC != PLCC & class_13d != PLCC ~ "1.0 & 1.3 Do Not Align with PLCC",
                 SPCC != PLCC & class_13d == PLCC ~ "1.3 Aligns with PLCC, 1.0 Does not",
                 SPCC == PLCC & class_13d == PLCC ~ "1.0 & 1.3 Align with PLCC"),
@@ -242,9 +243,11 @@ tm_shape(plcc_join) + tm_lines(col = "plcc_improvement",
 
 ```
 
-#### Table of Summarized SPCC 1.0 - SPCC 1.3d - PLCC Alighment
+#### Table of Summarized SPCC 1.0 - SPCC 1.3d - PLCC Alignment
 
 ```{r}
+
+pct_format <- scales::label_percent(accuracy = 0.1)
 
 spcc_plcc_table_summary_data <- plcc_join %>%
   select(plcc_improvement) %>% 
@@ -282,13 +285,10 @@ comparison %>%
             spcc_10_percent = spcc_10_miles / total_linear_miles,
             spcc_10_segment_count = n()) %>% 
   drop_na(spcc10_overall) %>% 
+  mutate(spcc_10_percent = pct_format(spcc_10_percent)) %>% 
   kbl(digits = 3, col.names = comparison_names) %>% 
   kable_paper("hover", full_width = F)
-  
-```
 
-*SPCC 1.3d Alignment Summary*
-```{r}
 comparison %>%
   select(linear_miles, total_linear_miles, spcc13d_overall) %>% 
   group_by(spcc13d_overall) %>% 
@@ -296,7 +296,8 @@ comparison %>%
             total_linear_miles = first(total_linear_miles),
             spcc_13d_percent = spcc_13d_miles / total_linear_miles,
             spcc_13d_segment_count = n()) %>% 
-  drop_na(spcc13d_overall)%>% 
+  drop_na(spcc13d_overall) %>% 
+  mutate(spcc_13d_percent = pct_format(spcc_13d_percent)) %>% 
   kbl(digits = 3, col.names = comparison_names) %>% 
   kable_paper("hover", full_width = F)
 ```
@@ -319,4 +320,3 @@ plcc_join %>%
 
 
 ```
-
