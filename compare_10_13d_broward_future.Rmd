@@ -55,16 +55,6 @@ remove_0_reclass <- matrix(
 
 The purpose of this page is to review SPCC version 1.3d and compare it to version 1.0. Version 1.0 represents the future version of SPCC and provides a baseline for comparison. Version 1.3d includes updated data layers where new data is available in addition to refined measures for evaluating intersection density, building placement, and land use diversity. Further, version 1.3d includes modified weights for density, diversity, and design scores. 1.3d differs from 1.3b in that the building setback search radius was changed from 1320 feet to 250 feet.
 
-#### Updated Weights in 1.3 Versions
-
-|           | SPCC 1.0 | SPCC 1.3a | SPCC 1.3b |
-|-----------|----------|-----------|-----------|
-| Density   | 50%      | 33%       | 25%       |
-| Diversity | 25%      | 33%       | 25%       |
-| Design    | 25%      | 34%       | 50%       |
-
-: SPCC Weights by Version
-
 ## Data Notes
 
 Version 1.3d includes the following changes from version 1.0.
@@ -84,7 +74,7 @@ Version 1.3d includes the following changes from version 1.0.
 
 #### Updated Data
 
--   All datasets used in the analysis were *updated with latest vintages*, when available, with the exception of truck volume and AADT. We are in the process of incorporating these new data, but expect them to change the classification in meaningful ways.
+-   All datasets used in the analysis were *updated with latest vintages* when new data were available.
 
 More information about each of the three new measures is provided in the Comparison of Updated Measures section.
 
@@ -95,7 +85,7 @@ More information about each of the three new measures is provided in the Compari
 ###PARAMETERS###
 spcc10_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Future\\Broward\\Version4k.gdb"
 
-spcc13c_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs\\future\\v13d_Broward_fixed.gdb'
+spcc13d_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs\\future\\v13d_Broward.gdb'
 
 #SPCC 1.0 uses output location, as int den was generated from points.
 spcc10_intden_input_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Future\\Broward\\Version4k.gdb\\BE_03Design_02IntDens"
@@ -104,7 +94,7 @@ spcc13_intden_input_gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\
 
 spcc10_diversity_input_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC\\Outputs\\Future\\Broward\\Version4k.gdb\\BE_02Diversity_01LU_count'
 
-spcc13c_input_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\inputs\\Broward.gdb'
+spcc13d_input_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\inputs\\Broward.gdb'
 
 
 #####
@@ -112,26 +102,26 @@ spcc13c_input_gdb <- 'K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v
 spcc10 <- as.raster(arc.raster(arc.open(paste0(spcc10_gdb, "\\DetAnalyticLU_FINAL")))) %>% 
   reclassify(remove_0_reclass)
 
-spcc13c <- as.raster(arc.raster(arc.open(paste0(spcc13c_gdb, "\\DetAnalyticLU_FINAL")))) %>% 
+spcc13d <- as.raster(arc.raster(arc.open(paste0(spcc13d_gdb, "\\DetAnalyticLU_FINAL")))) %>% 
   reclassify(remove_0_reclass)
 
-crs(spcc10) <- crs(spcc13c)
+crs(spcc10) <- crs(spcc13d)
 
 #manually set cells to all values in SPCC to ensure colors are correct in symbolization
 all_classes <- c(2, 307, 330, 400, 500, 600, 700, 800, 801, 901, 902)
 spcc10[1,1:12] <- all_classes
-spcc13c[1,1:12] <- all_classes
+spcc13d[1,1:12] <- all_classes
 
 #check if cells are the same or different
-diff <- overlay(spcc10, spcc13c, fun=function(a,b) return(a==b))
+diff <- overlay(spcc10, spcc13d, fun=function(a,b) return(a==b))
 
 #calculate directional change
 
 spcc10_reclass <- reclassify(spcc10, reclass_matrix)
 
-spcc13c_reclass <- reclassify(spcc13c, reclass_matrix)
+spcc13d_reclass <- reclassify(spcc13d, reclass_matrix)
 
-directional_change <- overlay(x = spcc10_reclass, y = spcc13c_reclass, fun = function(x, y) ifelse(x < y, 3,ifelse(x == y, 2,ifelse(x > y, 1, NA))))
+directional_change <- overlay(x = spcc10_reclass, y = spcc13d_reclass, fun = function(x, y) ifelse(x < y, 3,ifelse(x == y, 2,ifelse(x > y, 1, NA))))
 
 change_labels <- c("Moved to Lower Class", "No Change", "Moved to Higher Class")
 
@@ -139,7 +129,7 @@ change_labels <- c("Moved to Lower Class", "No Change", "Moved to Higher Class")
 
 map1 <- tm_shape(spcc10) + tm_raster(style = "cat", palette = spcc_palette, labels = spcc_labels, title = "SPCC 1.0") + tm_basemap("Esri.WorldImagery")
 
-map2 <- tm_shape(spcc13c) + tm_raster(style = "cat", palette = spcc_palette, labels = spcc_labels, title = "SPCC 1.3d") + tm_basemap("Esri.WorldImagery")
+map2 <- tm_shape(spcc13d) + tm_raster(style = "cat", palette = spcc_palette, labels = spcc_labels, title = "SPCC 1.3d") + tm_basemap("Esri.WorldImagery")
 
 map3 <- tm_shape(diff) + tm_raster(style = "cat", palette = 'viridis', title = "Difference") + tm_basemap("Esri.WorldImagery")
 
@@ -157,8 +147,7 @@ tmap_arrange(map1, map2, map3, map4, ncol = 1, sync = TRUE)
 The table below reviews changes from SPCC version 1.0 to 1.3d in tabular form. The rows indicate the number of cells of each SPCC classification in version 1.0. The columns represent the number of cells in version 1.3d. This allows for a quick review of which categories are changing, and how they are shifting.
 
 ```{r}
-crosstab <- crosstab(spcc10, spcc13c) 
-
+crosstab <- crosstab(spcc10, spcc13d) 
 
 crosstab %>% 
   kbl() %>% 
@@ -185,9 +174,9 @@ The following maps review the new building placement input layers. In version 1.
 
 spcc10_bulding_placement <- as.raster(arc.raster(arc.open(paste0(spcc10_gdb, "\\BE_03Design_01BldgPlcmt"))))
 
-spcc13c_bulding_placement <- as.raster(arc.raster(arc.open(paste0(spcc13c_gdb, "\\BE_03Design_01BldgPlcmt"))))
+spcc13d_bulding_placement <- as.raster(arc.raster(arc.open(paste0(spcc13d_gdb, "\\BE_03Design_01BldgPlcmt"))))
 
-crs(spcc10_bulding_placement) <- crs(spcc13c_bulding_placement)
+crs(spcc10_bulding_placement) <- crs(spcc13d_bulding_placement)
 ```
 
 ```{r}
@@ -196,11 +185,10 @@ spcc_building_placement_1 <- tm_shape(spcc10_bulding_placement) +
             breaks = c(0, 20, 75, 999999),
             palette = 'viridis') + tm_basemap("Esri.WorldImagery")
 
-spcc_building_placement_2 <- tm_shape(spcc13c_bulding_placement) + 
+spcc_building_placement_2 <- tm_shape(spcc13d_bulding_placement) + 
   tm_raster(style = "fixed", title = "SPCC 1.3d Building Placement",
             breaks = c(0, 20, 75, 999999),
             palette = 'viridis') + tm_basemap("Esri.WorldImagery")
-
 
 tmap_arrange(spcc_building_placement_1, spcc_building_placement_2, sync = T, ncol = 2)
 ```
@@ -218,15 +206,15 @@ Version 1.3d incorporates three changes from 1.0 intended to significantly impro
 
 spcc10_intden_gdb <- spcc10_intden_input_gdb
 
-spcc13c_intden_gdb <- spcc13_intden_input_gdb
+spcc13d_intden_gdb <- spcc13_intden_input_gdb
 
 spcc10_intden <- as.raster(arc.raster(arc.open(spcc10_intden_gdb)))
 
-spcc13c_intden <- as.raster(arc.raster(arc.open(spcc13c_intden_gdb)))
+spcc13d_intden <- as.raster(arc.raster(arc.open(spcc13d_intden_gdb)))
 
-crs(spcc10_intden) <- crs(spcc13c_intden)
+crs(spcc10_intden) <- crs(spcc13d_intden)
 
-spcc13c_intden <- crop(spcc13c_intden, spcc10_intden)
+spcc13d_intden <- crop(spcc13d_intden, spcc10_intden)
 ```
 
 ```{r}
@@ -235,7 +223,7 @@ spcc_intden_1 <- tm_shape(spcc10_intden) +
             breaks = c(0, 20, 100, 150, 200, 300, 99999999),
             palette = 'viridis') + tm_basemap("Esri.WorldImagery")
 
-spcc_intden_2 <- tm_shape(spcc13c_intden) + 
+spcc_intden_2 <- tm_shape(spcc13d_intden) + 
   tm_raster(style = "fixed", title = "SPCC 1.3d Intersection Density",
             breaks = c(0, 4, 20, 30, 40, 60, 99999999),
             labels = c("0-20", "20-100", "100-150", "150-200", "200-300", "300-99999999"),
@@ -256,13 +244,13 @@ In version 1.0, diversity is calculated as the number of different simplified la
 
 spcc10_diversity_gdb <- spcc10_diversity_input_gdb
 
-spcc13c_diversity_gdb <- paste0(spcc13c_input_gdb, "\\diversity_enp")
+spcc13d_diversity_gdb <- paste0(spcc13d_input_gdb, "\\diversity_enp")
 
 spcc10_diversity <- as.raster(arc.raster(arc.open(spcc10_diversity_gdb)))
 
-spcc13c_diversity <- as.raster(arc.raster(arc.open(spcc13c_diversity_gdb)))
+spcc13d_diversity <- as.raster(arc.raster(arc.open(spcc13d_diversity_gdb)))
 
-crs(spcc10_diversity) <- crs(spcc13c_diversity)
+crs(spcc10_diversity) <- crs(spcc13d_diversity)
 ```
 
 ```{r}
@@ -272,9 +260,9 @@ spcc_diversity_1 <- tm_shape(spcc10_diversity) +
             labels = c("0-1", "1-3", "3-999999"),
             palette = 'viridis') + tm_basemap("Esri.WorldImagery")
 
-spcc_diversity_2 <- tm_shape(spcc13c_diversity) + 
-  tm_raster(style = "fixed", title = "SPCC 1.3d Diversity",
-            breaks = c(0, 1, 1.7968490, 99999999),
+spcc_diversity_2 <- tm_shape(spcc13d_diversity) + 
+  tm_raster(title = "SPCC 1.3d Diversity",
+            #breaks = c(0, 1, 1.7968490, 99999999), style = "fixed", 
             palette = 'viridis') + tm_basemap("Esri.WorldImagery")
 
 

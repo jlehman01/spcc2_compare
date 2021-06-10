@@ -54,7 +54,7 @@ This website compares version 1.3d to version 1.0. Version 1.0 represents the fu
 ref_area <- st_read("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\inputs\\StLucie.gdb",
           layer = "RefArea", quiet = TRUE) #reference area (for clipping segments and plcc layer)
 
-layername <- "smoothed_segments_stlucie_overlay"
+layername <- "smoothed_segments_compare_stlucie"
 
 gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs\\future\\v13d_SegmentSmoothing.gdb"
 
