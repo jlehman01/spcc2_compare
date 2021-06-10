@@ -226,7 +226,9 @@ crosstab <- segments %>%
   st_drop_geometry() %>% 
   drop_na() %>% 
   group_by(class_base, class_13d) %>% 
+  arrange(class_base) %>% 
   summarise(segment_ft = sum(segment_ft)) %>% 
+  arrange(class_13d) %>% 
   pivot_wider(names_from = class_13d, values_from = segment_ft) 
 
 colnames(crosstab)[1] <- "Refined Smoothed"
