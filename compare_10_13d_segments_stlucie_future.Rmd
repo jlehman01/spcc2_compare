@@ -61,6 +61,7 @@ gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13b\\outputs
 ```
 
 
+
 ```{r}
 
 segments <- st_read(gdb, layer = layername, quiet = TRUE) %>%
@@ -163,42 +164,8 @@ map3 <- tm_shape(class_change) +
     tm_shape(ref_area) + tm_borders(col = "#a80084") +
   tm_basemap("CartoDB.Positron")
 
-tmap_arrange(map1, map2, map3, ncol = 1, sync = TRUE)
-```
 
-**Note: The Directional Change map only shows changes between detailed analytic classes C1-C6.**
-
-### Cross tabulation of SPCC 1.0 versus SPCC 1.3d by Linear Feet
-
-The table below provides a tabular comparison of SPCC refined smoothed analytic versions 1.0 to 1.3c. The rows represent linear feet of each classification under SPCC 1.0, and the columns represent liner feet per classification under SPCC 1.3d.
-
-```{r}
-
-crosstab <- segments %>%
-  st_drop_geometry() %>% 
-  drop_na() %>% 
-  group_by(class_base, class_13d) %>% 
-  summarise(segment_ft = sum(segment_ft)) %>% 
-  pivot_wider(names_from = class_13d, values_from = segment_ft) 
-
-colnames(crosstab)[1] <- "Refined Smoothed"
-
-kbl_col_num <- length(names(crosstab))-1
-
-crosstab %>% 
-  kbl(digits = 0, format.args = list(big.mark = ",")) %>% 
-  kable_paper("hover", full_width = F) %>% 
-  column_spec(1, bold = T, border_right = T) %>% 
-  add_header_above(c("SPCC 1.0", "SPCC 1.3d" = kbl_col_num))
-
-
-```
-
-### SPCC-PLCC Alignment [In Development]
-
-#### Map of SPCC-PLCC Alignment
-
-```{r }
+## SPCC PLCC ALIGNMENT ##
 
 crs <- st_crs(segments)
 
@@ -236,13 +203,47 @@ plcc_join <- plcc_join %>%
                 class_13d == PLCC ~ "SPCC 1.3d Aligns with PLCC")
          )
 
-tm_shape(plcc_join) + tm_lines(col = "plcc_improvement", 
+plcc_spcc_map <- tm_shape(plcc_join) + tm_lines(col = "plcc_improvement", 
                                palette = "-viridis", lwd = 4,
                                popup.vars = c("FM_Num", "plccID", "SPCC", "PLCC", "class_13d"),
-                               title.col = "SPCC-PLCC Improvement Category")
+                               title.col = "SPCC-PLCC Alignment") +
+      tm_shape(ref_area) + tm_borders(col = "#a80084")
+
+
+tmap_arrange(map1, map2, map3, plcc_spcc_map, ncol = 1, sync = TRUE)
+```
+
+**Note: The Directional Change map only shows changes between detailed analytic classes C1-C6.**
+
+### SPCC 1.0 vs. SPCC 1.3d
+
+### Cross tabulation of SPCC 1.0 versus SPCC 1.3d by Linear Feet
+
+The table below provides a tabular comparison of SPCC refined smoothed analytic versions 1.0 to 1.3c. The rows represent linear feet of each classification under SPCC 1.0, and the columns represent liner feet per classification under SPCC 1.3d.
+
+```{r}
+
+crosstab <- segments %>%
+  st_drop_geometry() %>% 
+  drop_na() %>% 
+  group_by(class_base, class_13d) %>% 
+  summarise(segment_ft = sum(segment_ft)) %>% 
+  pivot_wider(names_from = class_13d, values_from = segment_ft) 
+
+colnames(crosstab)[1] <- "Refined Smoothed"
+
+kbl_col_num <- length(names(crosstab))-1
+
+crosstab %>% 
+  kbl(digits = 0, format.args = list(big.mark = ",")) %>% 
+  kable_paper("hover", full_width = F) %>% 
+  column_spec(1, bold = T, border_right = T) %>% 
+  add_header_above(c("SPCC 1.0", "SPCC 1.3d" = kbl_col_num))
 
 
 ```
+
+### SPCC-PLCC Alignment [In Development]
 
 #### Table of Summarized SPCC 1.0 - SPCC 1.3d - PLCC Alignment
 
@@ -290,7 +291,6 @@ comparison %>%
   kbl(digits = 3, col.names = comparison_names) %>% 
   kable_paper("hover", full_width = F)
 
-
 comparison %>%
   select(linear_miles, total_linear_miles, spcc13d_overall) %>% 
   group_by(spcc13d_overall) %>% 
@@ -322,4 +322,3 @@ plcc_join %>%
 
 
 ```
-
