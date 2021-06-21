@@ -165,7 +165,7 @@ map3 <- tm_shape(class_change) +
   tm_basemap("CartoDB.Positron")
 
 
-## SPCC PLCC ALIGNMENT ##
+## SPCC PLCC ALIGNMENT VERSION 2 ##
 
 crs <- st_crs(segments)
 
@@ -186,13 +186,13 @@ plcc <- readRDS("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\sp
 
 #adjust precision to account for slight spatial differences, and intersect
 
-spcc_buffer <- st_buffer(segments, 5)
+plcc_buffer <- st_buffer(plcc, 5)
 
-plcc_join <- st_join(plcc, spcc_buffer,
-          largest = TRUE)
+plcc_join <- st_intersection(segments, plcc_buffer)
 
 plcc_join <- plcc_join %>% 
-  mutate(plcc_improvement = case_when(
+  mutate(segment_ft = as.numeric(st_length(.)),
+         plcc_improvement = case_when(
                 SPCC == PLCC & class_13d != PLCC~ "1.0 Aligns with PLCC, 1.3 Does not",
                 SPCC != PLCC & class_13d != PLCC ~ "1.0 & 1.3 Do Not Align with PLCC",
                 SPCC != PLCC & class_13d == PLCC ~ "1.3 Aligns with PLCC, 1.0 Does not",
@@ -200,15 +200,15 @@ plcc_join <- plcc_join %>%
          spcc10_overall = case_when(
                 SPCC == PLCC ~ "SPCC 1.0 Aligns with PLCC"),
          spcc13d_overall = case_when(
-                class_13d == PLCC ~ "SPCC 1.3d Aligns with PLCC")
-         )
+                class_13d == PLCC ~ "SPCC 1.3e Aligns with PLCC")
+         ) %>% 
+  filter(segment_ft > 11)
 
 plcc_spcc_map <- tm_shape(plcc_join) + tm_lines(col = "plcc_improvement", 
                                palette = "-viridis", lwd = 4,
                                popup.vars = c("FM_Num", "plccID", "SPCC", "PLCC", "class_13d"),
                                title.col = "SPCC-PLCC Alignment") +
       tm_shape(ref_area) + tm_borders(col = "#a80084")
-
 
 tmap_arrange(map1, map2, map3, plcc_spcc_map, ncol = 1, sync = TRUE)
 ```
