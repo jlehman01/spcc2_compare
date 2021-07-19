@@ -1,0 +1,337 @@
+---
+title: "Compare SPCC 1.0 & 1.3f Refined Smoothed Segments - Future - Indian River County"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+---
+
+```{r, include = FALSE, echo = FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(sf)
+library(tmap)
+library(kableExtra)
+library(readr)
+library(foreign)
+library(esri2sf)
+library(rmapshaper)
+library(DT)
+
+#library(remotes)
+#install_github("yonghah/esri2sf")
+
+options(width = 2000)
+
+tmap_mode("view")
+
+options(scipen=999)
+```
+
+```{r}
+#SPCC colors
+spcc_palette <- c("#267300", '#D7C29E', "#FFFFD4", 
+                   "#F5EE1C", "#FFCCCC", "#E60000", "#730000", "#0084A8")
+
+```
+
+# Overview
+
+The purpose of this page is to review SPCC refined smoothed analytic segments and compare them to version 1.0. This comparison report is still in development, and further maps and reports will be added as they are developed.
+
+This website compares version 1.3f to version 1.0. Version 1.0 represents the future version of SPCC and provides a baseline for comparison. Version 1.3f includes updated data layers where new data is available in addition to refined measures for evaluating intersection density, building placement, and land use diversity.
+
+## 1.3f Changes
+
+Version 1.3f uses a new approach to differentiating C-1 and C-2. To quality as C-1, a grid cell must now must have density-diversity-design characteristics below a C-3 AND have some level protection as a park or open space.
+
+
+# SPCC 1.0 and SPCC 1.3f Mapping: Refined Smoothed Segments
+
+```{r}
+
+#parameters to change from county to county
+
+ref_area <- st_read("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13e\\inputs\\IndianRiver.gdb",
+          layer = "RefArea", quiet = TRUE) #reference area (for clipping segments and plcc layer)
+
+layername <- "smoothed_segments_compare_indianriver"
+
+gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13e\\outputs\\future\\v13f_SegmentSmoothing.gdb"
+
+```
+
+```{r}
+
+segments <- st_read(gdb, layer = layername, quiet = TRUE) %>%
+  st_zm() %>% 
+  filter(as.numeric(st_length(.)) > 0) %>% 
+  rename(value_base = VALUE2,
+         value_13f = VALUE) %>% 
+  mutate(difference_flag = if_else(
+         value_base == value_13f, "No", "Yes"),
+         segment_ft = as.numeric(st_length(.)),
+         class_base = case_when(
+           value_base %in% c(1, 700) ~ "C1 - Natural",
+           value_base == 2 ~ "C2 - Rural",
+           value_base == 307 ~ "C3R - Suburban Residential",
+           value_base %in% c(330, 800, 801) ~ "C3C - Suburban Commercial",
+           value_base == 400 ~ "C4 - Urban General",
+           value_base == 500 ~ "C5 - Urban Center",
+           value_base == 600 ~ "C6 - Urban Core",
+           value_base %in% c(900, 901, 902) ~ "Special Districts"),
+         color_base = case_when(
+           value_base %in% c(1, 700) ~ "#267300",
+           value_base == 2 ~ "#D7C29E",
+           value_base == 307 ~ "#F5EE1C",
+           value_base %in% c(330, 800, 801) ~ "#FFFFD4",
+           value_base == 400 ~ "#FFCCCC",
+           value_base == 500 ~  "#E60000",
+           value_base == 600 ~ "#730000",
+           value_base %in% c(900, 901, 902) ~ "#0084A8"),
+         class_13f = case_when(
+           value_13f %in% c(1, 700) ~ "C1 - Natural",
+           value_13f == 2 ~ "C2 - Rural",
+           value_13f == 307 ~ "C3R - Suburban Residential",
+           value_13f %in% c(330, 800, 801) ~ "C3C - Suburban Commercial",
+           value_13f == 400 ~ "C4 - Urban General",
+           value_13f == 500 ~ "C5 - Urban Center",
+           value_13f == 600 ~ "C6 - Urban Core",
+           value_13f %in% c(900, 901, 902) ~ "Special Districts"),
+         color_13f = case_when(
+           value_13f %in% c(1, 700) ~ "#267300",
+           value_13f == 2 ~ "#D7C29E",
+           value_13f == 307 ~ "#F5EE1C",
+           value_13f %in% c(330, 800, 801) ~ "#FFFFD4",
+           value_13f == 400 ~ "#FFCCCC",
+           value_13f == 500 ~  "#E60000",
+           value_13f == 600 ~ "#730000",
+           value_13f %in% c(900, 901, 902) ~ "#0084A8"),
+         ) %>% 
+  dplyr::filter(segment_ft > 0) %>% 
+  ms_clip(ref_area)
+
+class_change <- segments %>% 
+  filter(value_base < 900 & value_base != 700 & 
+           value_13f < 900 & value_13f != 700) %>% 
+  mutate(value_base_for_change = parse_number(class_base),
+         value_13f_for_change = parse_number(class_13f),
+         directional_change = case_when(
+           value_base_for_change < value_13f_for_change ~ "class increase",
+           value_base_for_change > value_13f_for_change ~ "class decrease",
+           value_base_for_change == value_13f_for_change ~ "no change"))
+
+```
+
+```{r}
+
+legend_10_palette  <- segments %>%
+  st_drop_geometry() %>% 
+  distinct(color_base, class_base) %>% 
+  drop_na() %>% 
+  arrange(class_base)
+
+legend_13f_palette  <- segments %>%
+  st_drop_geometry() %>% 
+  distinct(color_13f, class_13f) %>% 
+  drop_na() %>% 
+  arrange(class_13f)
+
+map1 <- tm_shape(segments) + 
+  tm_lines(col = "color_base", lwd = 2.5) +
+  tm_add_legend(type = "fill", labels = legend_10_palette$class_base, 
+                col = legend_10_palette$color_base,
+                title = "SPCC 1.0 Refined Smoothed") +
+  tm_shape(ref_area) + tm_borders(col = "#a80084") +
+  tm_basemap("Esri.WorldImagery")
+
+
+map2 <- tm_shape(segments) + 
+  tm_lines(col = "color_13f", lwd = 2.5, 
+           showNA = F) +
+  tm_add_legend(type = "fill", labels = legend_13f_palette$class_13f, 
+                col = legend_13f_palette$color_13f,
+                title = "SPCC 1.3f Refined Smoothed") +
+  tm_shape(ref_area) + tm_borders(col = "#a80084") +
+  tm_basemap("Esri.WorldImagery")
+
+map3 <- tm_shape(class_change) + 
+  tm_lines(col = "directional_change", style = "cat", 
+           palette = 'viridis', lwd = 2.5, 
+           title.col = "SPCC 1.0 vs. 1.3f - Directional Change", 
+           popup.vars = c("value_base", "value_13f")) +
+    tm_shape(ref_area) + tm_borders(col = "#a80084") +
+  tm_basemap("CartoDB.Positron")
+
+
+## SPCC PLCC ALIGNMENT VERSION 2 ##
+
+crs <- st_crs(segments)
+
+#read in plcc layer from arc rest api
+
+# url <- "https://services1.arcgis.com/O1JpcwDW8sjYuddV/ArcGIS/rest/services/OMD_SPCC/FeatureServer/1"
+ 
+# plcc <- esri2sf(url, quiet = T) %>% 
+#   st_transform(crs)  
+
+# 
+# saveRDS(plcc, "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\spcc2_compare\\data\\plcc.Rds")
+
+plcc <- readRDS("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\spcc2_compare\\data\\plcc.Rds") %>% 
+  dplyr::select(SPCC, PLCC, FM_Num) %>% 
+  ms_clip(ref_area) %>% 
+  mutate(plccID = row_number())
+
+#adjust precision to account for slight spatial differences, and intersect
+
+plcc_buffer <- st_buffer(plcc, 5)
+
+plcc_join <- st_intersection(segments, plcc_buffer)
+
+plcc_join <- plcc_join %>% 
+  mutate(segment_ft = as.numeric(st_length(.)),
+         plcc_improvement = case_when(
+                SPCC == PLCC & class_13f != PLCC~ "1.0 Aligns with PLCC, 1.3 Does not",
+                SPCC != PLCC & class_13f != PLCC ~ "1.0 & 1.3 Do Not Align with PLCC",
+                SPCC != PLCC & class_13f == PLCC ~ "1.3 Aligns with PLCC, 1.0 Does not",
+                SPCC == PLCC & class_13f == PLCC ~ "1.0 & 1.3 Align with PLCC"),
+         spcc10_overall = case_when(
+                SPCC == PLCC ~ "SPCC 1.0 Aligns with PLCC"),
+         spcc13f_overall = case_when(
+                class_13f == PLCC ~ "SPCC 1.3f Aligns with PLCC")
+         ) %>% 
+  filter(segment_ft > 11)
+
+plcc_spcc_map <- tm_shape(plcc_join) + tm_lines(col = "plcc_improvement", 
+                               palette = "-viridis", lwd = 4,
+                               popup.vars = c("FM_Num", "plccID", "SPCC", "PLCC", "class_13f"),
+                               title.col = "SPCC-PLCC Alignment") +
+      tm_shape(ref_area) + tm_borders(col = "#a80084")
+
+tmap_arrange(map1, map2, map3, plcc_spcc_map, ncol = 1, sync = TRUE)
+```
+
+**Note: The Directional Change map only shows changes between detailed analytic classes C1-C6.**
+
+### SPCC 1.0 vs. SPCC 1.3f
+
+### Cross tabulation of SPCC 1.0 versus SPCC 1.3f by Linear Feet
+
+The table below provides a tabular comparison of SPCC refined smoothed analytic versions 1.0 to 1.3c. The rows represent linear feet of each classification under SPCC 1.0, and the columns represent liner feet per classification under SPCC 1.3f.
+
+```{r}
+
+crosstab <- segments %>%
+  st_drop_geometry() %>% 
+  drop_na() %>% 
+  group_by(class_base, class_13f) %>% 
+  arrange(class_base) %>% 
+  summarise(segment_ft = sum(segment_ft)) %>% 
+  arrange(class_13f) %>% 
+  pivot_wider(names_from = class_13f, values_from = segment_ft) 
+
+colnames(crosstab)[1] <- "Refined Smoothed"
+
+kbl_col_num <- length(names(crosstab))-1
+
+crosstab %>% 
+  kbl(digits = 0, format.args = list(big.mark = ",")) %>% 
+  kable_paper("hover", full_width = F) %>% 
+  column_spec(1, bold = T, border_right = T) %>% 
+  add_header_above(c("SPCC 1.0", "SPCC 1.3f" = kbl_col_num))
+
+
+```
+
+### SPCC-PLCC Alignment [In Development]
+
+#### Table of Summarized SPCC 1.0 - SPCC 1.3f - PLCC Alignment
+
+```{r}
+
+pct_format <- scales::label_percent(accuracy = 0.1)
+
+spcc_plcc_table_summary_data <- plcc_join %>%
+  select(plcc_improvement) %>% 
+  mutate(linear_miles = as.numeric(st_length(.))/5280) %>%
+  st_drop_geometry() %>% 
+  filter(linear_miles > 0) %>%
+  group_by(plcc_improvement) %>% 
+  summarise(linear_miles = sum(linear_miles))
+
+spcc_plcc_table_summary_data %>% 
+  kbl(digits = 3) %>% 
+  kable_paper("hover", full_width = F)
+
+```
+
+#### Comparing Linear Miles of Alignment with PLCC by SPCC Version
+
+*SPCC 1.0 Alignment Summary*
+
+```{r}
+
+comparison <- plcc_join %>% 
+  mutate(linear_miles = as.numeric(st_length(.))/5280) %>%
+  st_drop_geometry() %>% 
+  filter(linear_miles > 0) %>% 
+  mutate(total_linear_miles = sum(linear_miles)) %>% 
+  select(linear_miles, total_linear_miles, spcc10_overall, spcc13f_overall)
+
+comparison_names <- c("SPCC Version", "Miles of Alignment", "Total PLCC Miles", "% of Alignment", "# of Segments in Alignment")
+
+comparison %>%
+  select(linear_miles, total_linear_miles, spcc10_overall) %>% 
+  group_by(spcc10_overall) %>% 
+  summarise(spcc_10_miles = sum(linear_miles),
+            total_linear_miles = first(total_linear_miles),
+            spcc_10_percent = spcc_10_miles / total_linear_miles,
+            spcc_10_segment_count = n()) %>% 
+  drop_na(spcc10_overall) %>% 
+  mutate(spcc_10_percent = pct_format(spcc_10_percent)) %>% 
+  kbl(digits = 3, col.names = comparison_names) %>% 
+  kable_paper("hover", full_width = F)
+
+comparison %>%
+  select(linear_miles, total_linear_miles, spcc13f_overall) %>% 
+  group_by(spcc13f_overall) %>% 
+  summarise(spcc_13f_miles = sum(linear_miles),
+            total_linear_miles = first(total_linear_miles),
+            spcc_13f_percent = spcc_13f_miles / total_linear_miles,
+            spcc_13f_segment_count = n()) %>% 
+  drop_na(spcc13f_overall) %>% 
+  mutate(spcc_13f_percent = pct_format(spcc_13f_percent)) %>% 
+  kbl(digits = 3, col.names = comparison_names) %>% 
+  kable_paper("hover", full_width = F)
+```
+
+#### Table of All PLCC Segments
+
+```{r}
+
+plcc_segment_names = c("FM_Num", "PLCC ID", "SPCC 1.3f", "SPCC 1.0", 
+                    "PLCC", "Improvement Category", "Linear Miles")
+
+plcc_join %>%
+  select(FM_Num, plccID, class_13f, SPCC, PLCC, plcc_improvement) %>% 
+  mutate(linear_miles = as.numeric(st_length(.))/5280) %>%
+  st_drop_geometry() %>% 
+  filter(linear_miles > 0) %>%
+  arrange(desc(linear_miles)) %>% 
+  datatable(class = 'cell-border stripe', colnames = plcc_segment_names) %>% 
+  formatRound("linear_miles", digits=2)
+
+
+```
+
+
+### Underlying Protected Areas in SPCC 1.3f
+
+```{r}
+
+```
+
