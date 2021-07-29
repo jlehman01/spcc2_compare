@@ -152,7 +152,6 @@ tm_shape(model_zones_subset) + tm_polygons(col = "c5_emp", alpha = 0.5,
   tm_add_legend(type = "fill", label = "Place w/ 3+ Categories", col = "#8400a8")
 ```
 
-
 #### Table of Places With 3+ POI Categories Within 1,000 Feet
 
 ```{r}
@@ -177,3 +176,19 @@ tm_shape(grid_with_summary) + tm_fill(col = "count", palette = "-inferno") +
                                   palette = "viridis")
 
 ```
+
+### Output C5 Overlay Areas
+
+```{r}
+c5_overlay <- points_with_geocode %>%
+  dplyr::filter(pct_c5_emp >= 20) %>% 
+  st_buffer(1320) %>% 
+  transmute(future = 0,
+         SD_type = 5,
+         Flag_1 = 0)
+
+#st_write(c5_overlay, "K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/data_prep/cleaned_data/c5_overlay/c5_overlay.shp")
+
+tm_shape(c5_overlay) + tm_fill(col = "#481567FF")
+```
+
