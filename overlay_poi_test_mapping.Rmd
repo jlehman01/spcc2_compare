@@ -42,7 +42,7 @@ merged_points <- readRDS("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/data_pre
   st_filter(model_zones,
             .predicate = st_intersects)
 
-
+  
 ```
 
 ## Summary
@@ -58,8 +58,13 @@ The following POIs were queried from Open Street Map:
 -   Police
 -   Fire Station
 -   Courthouse
--   Library
 -   Government
+
+The following POIs were obtained from FGDL:
+
+-   Library
+-   Theaters & Performing Arts Center
+-   Museums & Art Galleries
 
 The following model SE data is used to filter POI clusters:
 
@@ -72,8 +77,6 @@ The following model SE data is used to filter POI clusters:
 Finally, these areas are mapped with zones that contain the C5 employment threshold or greater of at least 20 jobs per acre.
 
 ### Summary of Results
-
-#### Map w/ POI clusters (w/ score with score of 3 or higher) + Zones w/ C5+ Employment Density
 
 ```{r}
 
@@ -97,8 +100,43 @@ geocoded_points <- geocoded_points %>%
            case_when(office == "City of Coral Springs City Hall" ~ "Coral Springs"), display_name))
            
 
-points_with_geocode <- cbind(three_plus_points, geocoded_points)
+points_with_geocode <- cbind(three_plus_points, geocoded_points) %>%
+  ungroup() %>% 
+  mutate(point_id = row_number())
 
+emp_density_per_point <- points_with_geocode %>% 
+  st_buffer(2640) %>%
+  mutate(buffer_area = as.numeric(st_area(.))) %>% 
+  st_intersection(model_zones) %>% 
+  mutate(intersect_area = as.numeric(st_area(.))) %>%
+  st_drop_geometry() %>% 
+  group_by(point_id, c5_emp) %>% 
+  summarise(grouped_area = sum(intersect_area),
+            buffer_area = first(buffer_area)) %>% 
+  pivot_wider(names_from = "c5_emp",
+              values_from = "grouped_area") %>% 
+  replace(is.na(.), 0) %>% 
+  mutate(buffer_calc = yes + no) %>% 
+  mutate(pct_c5_emp = round((yes / buffer_calc) * 100, digits = 2)) %>% 
+  dplyr::select(point_id, pct_c5_emp)
+
+points_with_geocode <- left_join(points_with_geocode, 
+                                 emp_density_per_point)
+
+```
+
+#### Map w/ POI clusters (w/ score with score of 3 or higher) w/ Percent of 1/2-mile Buffer that Meets C5+ Emp Density (20/ac+)
+```{r}
+tm_shape(points_with_geocode) + tm_dots(col = "pct_c5_emp", size = 0.1, style = "jenks", n = 7,
+                                          perceptual = TRUE, palette = "-viridis") +
+  tm_text("display_name", remove.overlap = TRUE, just = "bottom") +
+  tm_add_legend(type = "fill", label = "Place w/ 3+ Categories by C5 Emp LU in Buffer", col = "#8400a8")
+```
+
+
+
+#### Map w/ POI clusters (w/ score with score of 3 or higher) + Zones w/ C5+ Employment Density
+```{r}
 tm_shape(model_zones) + tm_polygons(col = "c5_emp", alpha = 0.5,
                                       palette = c("#ea425a", "#96a821"),
                                     title = "Zones w/ C5+ Emp Den",
@@ -109,14 +147,15 @@ tm_shape(model_zones) + tm_polygons(col = "c5_emp", alpha = 0.5,
   tm_add_legend(type = "fill", label = "Place w/ 3+ Categories", col = "#8400a8")
 ```
 
+
 #### Table of Places With 3+ POI Categories Within 1,000 Feet
 
 ```{r}
 
 points_with_geocode %>%
   st_drop_geometry() %>%
-  distinct(county, display_name) %>% 
-  kbl(col.names = c("County", "Place Name")) %>% 
+  distinct(county, display_name, pct_c5_emp) %>% 
+  kbl(col.names = c("County", "Place Name", "% of 1/2 mi buffer w/ C5+ Emp Den")) %>% 
   kable_paper("hover", full_width = F)
 
 ```

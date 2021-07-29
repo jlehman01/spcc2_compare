@@ -103,13 +103,6 @@ osm_courthouse <- opq(bbox = study_area_bbox) %>%
 osm_courthouse$osm_points$type <- "courthouse"
 osm_courthouse$osm_polygons$type <- "courthouse"
 
-osm_library <- opq(bbox = study_area_bbox) %>%
-      add_osm_feature(key = 'amenity', value = "library") %>% 
-  osmdata_sf()
-
-osm_library$osm_points$type <- "library"
-osm_library$osm_polygons$type <- "library"
-
 osm_government <- opq(bbox = study_area_bbox) %>%
       add_osm_feature(key = 'office', value = "government") %>% 
   osmdata_sf()
@@ -117,7 +110,7 @@ osm_government <- opq(bbox = study_area_bbox) %>%
 osm_government$osm_points$type <- "government"
 osm_government$osm_polygons$type <- "government"
 
-merged_points <- bind_rows(osm_townhall$osm_points,
+points <- bind_rows(osm_townhall$osm_points,
                             st_centroid(osm_townhall$osm_polygons),
                             osm_postoffice$osm_points,
                             st_centroid(osm_postoffice$osm_polygons),
@@ -127,12 +120,23 @@ merged_points <- bind_rows(osm_townhall$osm_points,
                             st_centroid(osm_fire$osm_polygons),
                             osm_courthouse$osm_points,
                             st_centroid(osm_courthouse$osm_polygons),
-                            osm_library$osm_points,
-                            st_centroid(osm_library$osm_polygons),
                             osm_government$osm_points,
                             st_centroid(osm_government$osm_polygons)) %>% 
   dplyr::select(name, type) %>% 
   st_transform(epsg)
+
+#get supplmeental categories from FGDL dataset
+
+supplemental_points <- st_read("K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/data_prep/raw_data/cultural/gc_culturecenter_oct15.shp",
+                              quiet = T) %>%
+  st_transform(epsg) %>% 
+  dplyr::filter(TYPE %in% c("MUSEUMS AND ART GALLERIES",
+                            "THEATRES AND PERFORMING ARTS CENTER",
+                            "LIBRARY")) %>% 
+  rename(type = TYPE)
+
+merged_points <- bind_rows(points,
+          supplemental_points)
 
 saveRDS(merged_points, "K:/Projects/D4_CSHnetwork/Features/LU/SPCC_20/data_prep/demo_data/services_count_overlay/services_merged_points.rds")
 
