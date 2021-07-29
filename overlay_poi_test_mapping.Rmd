@@ -137,7 +137,12 @@ tm_shape(points_with_geocode) + tm_dots(col = "pct_c5_emp", size = 0.1, style = 
 
 #### Map w/ POI clusters (w/ score with score of 3 or higher) + Zones w/ C5+ Employment Density
 ```{r}
-tm_shape(model_zones) + tm_polygons(col = "c5_emp", alpha = 0.5,
+
+model_zones_subset <- model_zones %>% 
+  st_filter(st_buffer(points_with_geocode, 2640),
+            .predicate = st_intersects)
+
+tm_shape(model_zones_subset) + tm_polygons(col = "c5_emp", alpha = 0.5,
                                       palette = c("#ea425a", "#96a821"),
                                     title = "Zones w/ C5+ Emp Den",
                                     popup.vars = c("Emp_45_den")) + tm_shape(three_plus_gird) + tm_borders(col = "#8400a8") +
