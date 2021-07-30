@@ -328,10 +328,3 @@ plcc_join %>%
 
 ```
 
-
-### Underlying Protected Areas in SPCC 1.3f
-
-```{r}
-
-```
-
