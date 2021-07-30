@@ -46,7 +46,7 @@ This website compares version 1.3f to version 1.0. Version 1.0 represents the fu
 
 ## 1.3f Changes
 
-Version 1.3f uses a new approach to differentiating C-1 and C-2. To quality as C-1, a grid cell must now must have density-diversity-design characteristics below a C-3 AND have some level protection as a park or open space.
+Version 1.3f uses a new approach to differentiating C-1 and C-2. To quality as C-1, a grid cell must now must have density-diversity-design characteristics below a C-3 AND have some level protection as a park or open space. 1.3f also includes a C-5 overlay that provides an alternative path for C-4 to become C-5 if there is a cluster of civic uses and employment density thresholds are met for C-5.
 
 
 # SPCC 1.0 and SPCC 1.3f Mapping: Refined Smoothed Segments
@@ -327,11 +327,3 @@ plcc_join %>%
 
 
 ```
-
-
-### Underlying Protected Areas in SPCC 1.3f
-
-```{r}
-
-```
-
