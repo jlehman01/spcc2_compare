@@ -309,6 +309,50 @@ comparison %>%
   kable_paper("hover", full_width = F)
 ```
 
+#### PLCC Access Class by PLCC-SPCC Alignment
+
+```{r}
+
+### PLCC ACCESS CLASS ALIGNMENT
+
+#read in acess class data from arc rest api
+
+# url_accessclass <- "https://opendata.arcgis.com/datasets/b724987f94984b20aa7a575f25b62608_0.geojson"
+# 
+# access_class <- st_read(url_accessclass) %>% 
+#   st_transform(crs) 
+# 
+# saveRDS(access_class, "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\spcc2_compare\\data\\access_class.Rds")
+
+access_class <- readRDS("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\spcc2_compare\\data\\access_class.Rds") %>% 
+  ms_clip(ref_area)
+
+access_class_buffer <- access_class %>% 
+  st_buffer(5)
+
+intersection <- st_intersection(plcc_join, access_class_buffer) %>% 
+  mutate(length = as.numeric(st_length(.))) %>% 
+  dplyr::filter(length > 12)%>% 
+  dplyr::select(ROADID, SPCC, class_13f, PLCC, plcc_improvement, ACCESS_CLA, length)
+
+intersection %>% 
+  st_drop_geometry() %>%
+  group_by(PLCC, plcc_improvement) %>% 
+  mutate(group_length = round(sum(length), digits = 0)) %>% 
+  ungroup() %>% 
+  group_by(PLCC, plcc_improvement, ACCESS_CLA) %>%
+  summarise(length_ft = round(sum(length), digits = 0),
+            group_length = first(group_length)) %>%
+  ungroup() %>% 
+  mutate(pct = round((length_ft / group_length) * 100, digits = 0)) %>% 
+  mutate(miles = round(length_ft / 5280, digits = 2)) %>%
+  dplyr::select(-group_length, -length_ft) %>% 
+  kbl(col.names = c("PLCC", "SPCC-PLCC Alignment", "Access Class", "Percent", "Miles")) %>% 
+  collapse_rows(columns = 1:2, valign = "top") %>% 
+  kable_paper(full_width = F)
+```
+
+
 #### Table of All PLCC Segments
 
 ```{r}
