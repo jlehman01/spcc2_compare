@@ -367,7 +367,11 @@ plcc_join %>%
   st_drop_geometry() %>% 
   filter(linear_miles > 0) %>%
   arrange(desc(linear_miles)) %>% 
-  datatable(class = 'cell-border stripe', colnames = plcc_segment_names) %>% 
+  datatable(class = 'cell-border stripe', colnames = plcc_segment_names,
+            extensions = 'Buttons', options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel')
+  )) %>% 
   formatRound("linear_miles", digits=2)
 
 
