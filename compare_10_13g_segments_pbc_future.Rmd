@@ -248,7 +248,7 @@ crosstab %>%
 
 ```
 
-### SPCC-PLCC Alignment [In Development]
+### SPCC-PLCC Alignment
 
 #### Table of Summarized SPCC 1.0 - SPCC 1.3g - PLCC Alignment
 
@@ -372,7 +372,7 @@ plcc_join %>%
     dom = 'Bfrtip',
     buttons = c('copy', 'csv', 'excel')
   )) %>% 
-  formatRound("linear_miles", digits=2)
+  formatRound("linear_miles", digits=3)
 
 
 ```
