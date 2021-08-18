@@ -147,7 +147,7 @@ map1 <- tm_shape(segments) +
                 col = legend_10_palette$color_base,
                 title = "SPCC 1.0 Refined Smoothed") +
   tm_shape(ref_area) + tm_borders(col = "#a80084") +
-  tm_basemap("USGS.USImageryTopo")
+  tm_basemap("Esri.WorldImagery")
 
 
 map2 <- tm_shape(segments) + 
@@ -157,7 +157,7 @@ map2 <- tm_shape(segments) +
                 col = legend_13g_palette$color_13g,
                 title = "SPCC 1.3g Refined Smoothed") +
   tm_shape(ref_area) + tm_borders(col = "#a80084") +
-  tm_basemap("USGS.USImageryTopo")
+  tm_basemap("Esri.WorldImagery")
 
 map3 <- tm_shape(class_change) + 
   tm_lines(col = "directional_change", style = "cat", 
