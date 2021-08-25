@@ -1,5 +1,5 @@
 ---
-title: "Compare SPCC 1.0 & 1.3g Refined Smoothed Segments - Future - St. Lucie County"
+title: "Compare SPCC 1.0 & 2.0v1 Refined Smoothed Segments - Future - St. Lucie County"
 output:
   html_document:
     df_print: paged
@@ -56,12 +56,12 @@ This website compares version 1.3g to version 1.0. Version 1.0 represents the fu
 
 #parameters to change from county to county
 
-ref_area <- st_read("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13g\\inputs\\StLucie.gdb",
+ref_area <- st_read("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v20_final\\inputs\\StLucie.gdb",
           layer = "RefArea", quiet = TRUE) #reference area (for clipping segments and plcc layer)
 
 layername <- "smoothed_segments_compare_stlucie"
 
-gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v2_13g\\outputs\\future\\v13g_SegmentSmoothing.gdb"
+gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v0_final\\outputs\\future\\v20final_SegmentSmoothing.gdb"
 
 ```
 
