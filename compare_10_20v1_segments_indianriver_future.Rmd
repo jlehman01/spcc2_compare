@@ -191,10 +191,10 @@ plcc_join <- st_intersection(segments, plcc_buffer)
 plcc_join <- plcc_join %>% 
   mutate(segment_ft = as.numeric(st_length(.)),
          plcc_improvement = case_when(
-                SPCC == PLCC & class_20v1 != PLCC~ "1.0 Aligns with PLCC, 1.3 Does not",
-                SPCC != PLCC & class_20v1 != PLCC ~ "1.0 & 1.3 Do Not Align with PLCC",
-                SPCC != PLCC & class_20v1 == PLCC ~ "1.3 Aligns with PLCC, 1.0 Does not",
-                SPCC == PLCC & class_20v1 == PLCC ~ "1.0 & 1.3 Align with PLCC"),
+                SPCC == PLCC & class_20v1 != PLCC~ "1.0 Aligns with PLCC, 2.0v1 Does not",
+                SPCC != PLCC & class_20v1 != PLCC ~ "1.0 & 2.0v1 Do Not Align with PLCC",
+                SPCC != PLCC & class_20v1 == PLCC ~ "2.0v1 Aligns with PLCC, 1.0 Does not",
+                SPCC == PLCC & class_20v1 == PLCC ~ "1.0 & 2.0v1 Align with PLCC"),
          spcc10_overall = case_when(
                 SPCC == PLCC ~ "SPCC 1.0 Aligns with PLCC"),
          spcc20v1_overall = case_when(
@@ -217,7 +217,7 @@ tmap_arrange(map1, map2, map3, plcc_spcc_map, ncol = 1, sync = TRUE)
 
 ### Cross tabulation of SPCC 1.0 versus SPCC 2.0v1 by Linear Feet
 
-The table below provides a tabular comparison of SPCC refined smoothed analytic versions 1.0 to 1.3c. The rows represent linear feet of each classification under SPCC 1.0, and the columns represent liner feet per classification under SPCC 2.0v1.
+The table below provides a tabular comparison of SPCC refined smoothed analytic versions 1.0 to 2.0v1. The rows represent linear feet of each classification under SPCC 1.0, and the columns represent liner feet per classification under SPCC 2.0v1.
 
 ```{r}
 
