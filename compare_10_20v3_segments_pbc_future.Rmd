@@ -1,0 +1,374 @@
+---
+title: "Compare SPCC 1.0 & 2.0v3 Refined Smoothed Segments - Future - Palm Beach County"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+---
+
+```{r, include = FALSE, echo = FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(sf)
+library(tmap)
+library(kableExtra)
+library(readr)
+library(foreign)
+library(esri2sf)
+library(rmapshaper)
+library(DT)
+
+#library(remotes)
+#install_github("yonghah/esri2sf")
+
+options(width = 2000)
+
+tmap_mode("view")
+
+options(scipen=999)
+```
+
+```{r}
+#SPCC colors
+spcc_palette <- c("#267300", '#D7C29E', "#FFFFD4", 
+                   "#F5EE1C", "#FFCCCC", "#E60000", "#730000", "#0084A8")
+
+```
+
+# Overview
+
+The purpose of this page is to review SPCC refined smoothed analytic segments and compare them to version 1.0. This comparison report is still in development, and further maps and reports will be added as they are developed.
+
+This website compares version 2.0v3 to version 1.0. Version 1.0 represents the future version of SPCC and provides a baseline for comparison. Version 2.0v3 includes updated data layers where new data is available in addition to refined measures for evaluating intersection density, building placement, and land use diversity.
+
+
+# SPCC 1.0 and SPCC 2.0v3 Mapping: Refined Smoothed Segments
+
+```{r}
+
+#parameters to change from county to county
+
+ref_area <- st_read("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v20_final\\inputs\\PBC.gdb",
+          layer = "RefArea", quiet = TRUE) #reference area (for clipping segments and plcc layer)
+
+layername <- "smoothed_segments_compare_pbc"
+
+gdb <- "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\spcc_v20_final\\outputs\\future\\v20final_SegmentSmoothing.gdb"
+
+```
+
+```{r}
+
+segments <- st_read(gdb, layer = layername, quiet = TRUE) %>%
+  st_zm() %>% 
+  filter(as.numeric(st_length(.)) > 0) %>% 
+  rename(value_base = VALUE2,
+         value_20v3 = VALUE) %>% 
+  mutate(difference_flag = if_else(
+         value_base == value_20v3, "No", "Yes"),
+         segment_ft = as.numeric(st_length(.)),
+         class_base = case_when(
+           value_base %in% c(1, 700) ~ "C1 - Natural",
+           value_base == 2 ~ "C2 - Rural",
+           value_base == 307 ~ "C3R - Suburban Residential",
+           value_base %in% c(330, 800, 801) ~ "C3C - Suburban Commercial",
+           value_base == 400 ~ "C4 - Urban General",
+           value_base == 500 ~ "C5 - Urban Center",
+           value_base == 600 ~ "C6 - Urban Core",
+           value_base %in% c(900, 901, 902) ~ "Special Districts"),
+         color_base = case_when(
+           value_base %in% c(1, 700) ~ "#267300",
+           value_base == 2 ~ "#D7C29E",
+           value_base == 307 ~ "#F5EE1C",
+           value_base %in% c(330, 800, 801) ~ "#FFFFD4",
+           value_base == 400 ~ "#FFCCCC",
+           value_base == 500 ~  "#E60000",
+           value_base == 600 ~ "#730000",
+           value_base %in% c(900, 901, 902) ~ "#0084A8"),
+         class_20v3 = case_when(
+           value_20v3 %in% c(1, 700) ~ "C1 - Natural",
+           value_20v3 == 2 ~ "C2 - Rural",
+           value_20v3 == 307 ~ "C3R - Suburban Residential",
+           value_20v3 %in% c(330, 800, 801) ~ "C3C - Suburban Commercial",
+           value_20v3 == 400 ~ "C4 - Urban General",
+           value_20v3 == 500 ~ "C5 - Urban Center",
+           value_20v3 == 600 ~ "C6 - Urban Core",
+           value_20v3 %in% c(900, 901, 902) ~ "Special Districts"),
+         color_20v3 = case_when(
+           value_20v3 %in% c(1, 700) ~ "#267300",
+           value_20v3 == 2 ~ "#D7C29E",
+           value_20v3 == 307 ~ "#F5EE1C",
+           value_20v3 %in% c(330, 800, 801) ~ "#FFFFD4",
+           value_20v3 == 400 ~ "#FFCCCC",
+           value_20v3 == 500 ~  "#E60000",
+           value_20v3 == 600 ~ "#730000",
+           value_20v3 %in% c(900, 901, 902) ~ "#0084A8"),
+         ) %>% 
+  dplyr::filter(segment_ft > 0) %>% 
+  ms_clip(ref_area)
+
+class_change <- segments %>% 
+  filter(value_base < 900 & value_base != 700 & 
+           value_20v3 < 900 & value_20v3 != 700) %>% 
+  mutate(value_base_for_change = parse_number(class_base),
+         value_20v3_for_change = parse_number(class_20v3),
+         directional_change = case_when(
+           value_base_for_change < value_20v3_for_change ~ "class increase",
+           value_base_for_change > value_20v3_for_change ~ "class decrease",
+           value_base_for_change == value_20v3_for_change ~ "no change"))
+
+```
+
+```{r}
+
+legend_10_palette  <- segments %>%
+  st_drop_geometry() %>% 
+  distinct(color_base, class_base) %>% 
+  drop_na() %>% 
+  arrange(class_base)
+
+legend_20v3_palette  <- segments %>%
+  st_drop_geometry() %>% 
+  distinct(color_20v3, class_20v3) %>% 
+  drop_na() %>% 
+  arrange(class_20v3)
+
+map1 <- tm_shape(segments) + 
+  tm_lines(col = "color_base", lwd = 2.5) +
+  tm_add_legend(type = "fill", labels = legend_10_palette$class_base, 
+                col = legend_10_palette$color_base,
+                title = "SPCC 1.0 Refined Smoothed") +
+  tm_shape(ref_area) + tm_borders(col = "#a80084") +
+  tm_basemap("Esri.WorldImagery")
+
+
+map2 <- tm_shape(segments) + 
+  tm_lines(col = "color_20v3", lwd = 2.5, 
+           showNA = F) +
+  tm_add_legend(type = "fill", labels = legend_20v3_palette$class_20v3, 
+                col = legend_20v3_palette$color_20v3,
+                title = "SPCC 2.0v3 Refined Smoothed") +
+  tm_shape(ref_area) + tm_borders(col = "#a80084") +
+  tm_basemap("Esri.WorldImagery")
+
+map3 <- tm_shape(class_change) + 
+  tm_lines(col = "directional_change", style = "cat", 
+           palette = 'viridis', lwd = 2.5, 
+           title.col = "SPCC 1.0 vs. 2.0v3 - Directional Change", 
+           popup.vars = c("value_base", "value_20v3")) +
+    tm_shape(ref_area) + tm_borders(col = "#a80084") +
+  tm_basemap("CartoDB.Positron")
+
+
+## SPCC PLCC ALIGNMENT VERSION 2 ##
+
+crs <- st_crs(segments)
+
+#read in plcc layer from arc rest api
+
+# url <- "https://services1.arcgis.com/O1JpcwDW8sjYuddV/ArcGIS/rest/services/OMD_SPCC/FeatureServer/1"
+ 
+# plcc <- esri2sf(url, quiet = T) %>% 
+#   st_transform(crs)  
+
+# 
+# saveRDS(plcc, "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\spcc2_compare\\data\\plcc.Rds")
+
+plcc <- readRDS("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\spcc2_compare\\data\\plcc.Rds") %>% 
+  dplyr::select(SPCC, PLCC, FM_Num) %>% 
+  ms_clip(ref_area) %>% 
+  mutate(plccID = row_number())
+
+#adjust precision to account for slight spatial differences, and intersect
+
+plcc_buffer <- st_buffer(plcc, 5)
+
+plcc_join <- st_intersection(segments, plcc_buffer)
+
+plcc_join <- plcc_join %>% 
+  mutate(segment_ft = as.numeric(st_length(.)),
+         plcc_improvement = case_when(
+                SPCC == PLCC & class_20v3 != PLCC~ "1.0 Aligns with PLCC, 2.0v3 Does not",
+                SPCC != PLCC & class_20v3 != PLCC ~ "1.0 & 2.0v3 Do Not Align with PLCC",
+                SPCC != PLCC & class_20v3 == PLCC ~ "2.0v3 Aligns with PLCC, 1.0 Does not",
+                SPCC == PLCC & class_20v3 == PLCC ~ "1.0 & 2.0v3 Align with PLCC"),
+         spcc10_overall = case_when(
+                SPCC == PLCC ~ "SPCC 1.0 Aligns with PLCC"),
+         spcc20v1_overall = case_when(
+                class_20v3 == PLCC ~ "SPCC 2.0v3 Aligns with PLCC")
+         ) %>% 
+  filter(segment_ft > 11)
+
+plcc_spcc_map <- tm_shape(plcc_join) + tm_lines(col = "plcc_improvement", 
+                               palette = "-viridis", lwd = 4,
+                               popup.vars = c("FM_Num", "plccID", "SPCC", "PLCC", "class_20v3"),
+                               title.col = "SPCC-PLCC Alignment") +
+      tm_shape(ref_area) + tm_borders(col = "#a80084")
+
+tmap_arrange(map1, map2, map3, plcc_spcc_map, ncol = 1, sync = TRUE)
+```
+
+**Note: The Directional Change map only shows changes between detailed analytic classes C1-C6.**
+
+### SPCC 1.0 vs. SPCC 2.0v3
+
+### Cross tabulation of SPCC 1.0 versus SPCC 2.0v3 by Linear Feet
+
+The table below provides a tabular comparison of SPCC refined smoothed analytic versions 1.0 to 2.0v3c. The rows represent linear feet of each classification under SPCC 1.0, and the columns represent liner feet per classification under SPCC 2.0v3.
+
+```{r}
+
+crosstab <- segments %>%
+  st_drop_geometry() %>% 
+  drop_na() %>% 
+  group_by(class_base, class_20v3) %>% 
+  arrange(class_base) %>% 
+  summarise(segment_ft = sum(segment_ft)) %>% 
+  arrange(class_20v3) %>% 
+  pivot_wider(names_from = class_20v3, values_from = segment_ft) 
+
+colnames(crosstab)[1] <- "Refined Smoothed"
+
+kbl_col_num <- length(names(crosstab))-1
+
+crosstab %>% 
+  kbl(digits = 0, format.args = list(big.mark = ",")) %>% 
+  kable_paper("hover", full_width = F) %>% 
+  column_spec(1, bold = T, border_right = T) %>% 
+  add_header_above(c("SPCC 1.0", "SPCC 2.0v3" = kbl_col_num))
+
+
+```
+
+### SPCC-PLCC Alignment
+
+#### Table of Summarized SPCC 1.0 - SPCC 2.0v3 - PLCC Alignment
+
+```{r}
+
+pct_format <- scales::label_percent(accuracy = 0.1)
+
+spcc_plcc_table_summary_data <- plcc_join %>%
+  select(plcc_improvement) %>% 
+  mutate(linear_miles = as.numeric(st_length(.))/5280) %>%
+  st_drop_geometry() %>% 
+  filter(linear_miles > 0) %>%
+  group_by(plcc_improvement) %>% 
+  summarise(linear_miles = sum(linear_miles))
+
+spcc_plcc_table_summary_data %>% 
+  kbl(digits = 3) %>% 
+  kable_paper("hover", full_width = F)
+
+```
+
+#### Comparing Linear Miles of Alignment with PLCC by SPCC Version
+
+*SPCC 1.0 Alignment Summary*
+
+```{r}
+
+comparison <- plcc_join %>% 
+  mutate(linear_miles = as.numeric(st_length(.))/5280) %>%
+  st_drop_geometry() %>% 
+  filter(linear_miles > 0) %>% 
+  mutate(total_linear_miles = sum(linear_miles)) %>% 
+  select(linear_miles, total_linear_miles, spcc10_overall, spcc20v1_overall)
+
+comparison_names <- c("SPCC Version", "Miles of Alignment", "Total PLCC Miles", "% of Alignment", "# of Segments in Alignment")
+
+comparison %>%
+  select(linear_miles, total_linear_miles, spcc10_overall) %>% 
+  group_by(spcc10_overall) %>% 
+  summarise(spcc_10_miles = sum(linear_miles),
+            total_linear_miles = first(total_linear_miles),
+            spcc_10_percent = spcc_10_miles / total_linear_miles,
+            spcc_10_segment_count = n()) %>% 
+  drop_na(spcc10_overall) %>% 
+  mutate(spcc_10_percent = pct_format(spcc_10_percent)) %>% 
+  kbl(digits = 3, col.names = comparison_names) %>% 
+  kable_paper("hover", full_width = F)
+
+comparison %>%
+  select(linear_miles, total_linear_miles, spcc20v1_overall) %>% 
+  group_by(spcc20v1_overall) %>% 
+  summarise(spcc_20v3_miles = sum(linear_miles),
+            total_linear_miles = first(total_linear_miles),
+            spcc_20v3_percent = spcc_20v3_miles / total_linear_miles,
+            spcc_20v3_segment_count = n()) %>% 
+  drop_na(spcc20v1_overall) %>% 
+  mutate(spcc_20v3_percent = pct_format(spcc_20v3_percent)) %>% 
+  kbl(digits = 3, col.names = comparison_names) %>% 
+  kable_paper("hover", full_width = F)
+```
+
+
+#### PLCC Access Class by PLCC-SPCC Alignment
+
+```{r}
+
+### PLCC ACCESS CLASS ALIGNMENT
+
+#read in acess class data from arc rest api
+
+# url_accessclass <- "https://opendata.arcgis.com/datasets/b724987f94984b20aa7a575f25b62608_0.geojson"
+# 
+# access_class <- st_read(url_accessclass) %>% 
+#   st_transform(crs) 
+# 
+# saveRDS(access_class, "K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\spcc2_compare\\data\\access_class.Rds")
+
+access_class <- readRDS("K:\\Projects\\D4_CSHnetwork\\Features\\LU\\SPCC_20\\compare\\spcc2_compare\\data\\access_class.Rds") %>% 
+  ms_clip(ref_area)
+
+access_class_buffer <- access_class %>% 
+  st_buffer(5)
+
+intersection <- st_intersection(plcc_join, access_class_buffer) %>% 
+  mutate(length = as.numeric(st_length(.))) %>% 
+  dplyr::filter(length > 12)%>% 
+  dplyr::select(ROADID, SPCC, class_20v3, PLCC, plcc_improvement, ACCESS_CLA, length)
+
+intersection %>% 
+  st_drop_geometry() %>%
+  group_by(PLCC, plcc_improvement) %>% 
+  mutate(group_length = round(sum(length), digits = 0)) %>% 
+  ungroup() %>% 
+  group_by(PLCC, plcc_improvement, ACCESS_CLA) %>%
+  summarise(length_ft = round(sum(length), digits = 0),
+            group_length = first(group_length)) %>%
+  ungroup() %>% 
+  mutate(pct = round((length_ft / group_length) * 100, digits = 0)) %>% 
+  mutate(miles = round(length_ft / 5280, digits = 2)) %>%
+  dplyr::select(-group_length, -length_ft) %>% 
+  kbl(col.names = c("PLCC", "SPCC-PLCC Alignment", "Access Class", "Percent", "Miles")) %>% 
+  collapse_rows(columns = 1:2, valign = "top") %>% 
+  kable_paper(full_width = F)
+```
+
+#### Table of All PLCC Segments
+
+```{r}
+
+plcc_segment_names = c("FM_Num", "PLCC ID", "SPCC 2.0v3", "SPCC 1.0", 
+                    "PLCC", "Improvement Category", "Linear Miles")
+
+plcc_join %>%
+  select(FM_Num, plccID, class_20v3, SPCC, PLCC, plcc_improvement) %>% 
+  mutate(linear_miles = as.numeric(st_length(.))/5280) %>%
+  st_drop_geometry() %>% 
+  filter(linear_miles > 0) %>%
+  arrange(desc(linear_miles)) %>% 
+  datatable(class = 'cell-border stripe', colnames = plcc_segment_names,
+            extensions = 'Buttons', options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel')
+  )) %>% 
+  formatRound("linear_miles", digits=3)
+
+
+```
+
